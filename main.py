@@ -17,7 +17,7 @@ from torch.optim import lr_scheduler
 from collections import defaultdict
 
 def grayTrans(img):
-    img = img.data.cpu().numpy()[0][0]*255.0
+    img = img.data.cpu().numpy()[0]*255.0
     img = (img).astype(np.uint8)
     img = Image.fromarray(img, 'L')
     return img
@@ -160,12 +160,12 @@ for epoch in range(epochs):
 
     # transform to grayscale images
     avg = sum(sideOuts)/6
-    side1 = grayTrans(sideOuts[0])
-    side2 = grayTrans(sideOuts[1])
-    side3 = grayTrans(sideOuts[2])
-    side4 = grayTrans(sideOuts[3])
-    side5 = grayTrans(sideOuts[4])
-    fuse = grayTrans(sideOuts[5])
+    side1 = grayTrans(sideOuts[0][:,0,:,:])
+    side2 = grayTrans(sideOuts[1][:,0,:,:])
+    side3 = grayTrans(sideOuts[2][:,0,:,:])
+    side4 = grayTrans(sideOuts[3][:,0,:,:])
+    side5 = grayTrans(sideOuts[4][:,0,:,:])
+    fuse = grayTrans(sideOuts[5][:,0,:,:])
     avg = grayTrans(avg)
     tar = grayTrans(target)
     
