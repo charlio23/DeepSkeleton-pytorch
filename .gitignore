@@ -37,7 +37,7 @@ BSDS500_AUGMENTED
 *.rar
 *.tar
 *.zip
-
+*xz
 # Logs and databases #
 ######################
 *.log
