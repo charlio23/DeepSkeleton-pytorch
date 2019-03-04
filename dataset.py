@@ -26,7 +26,7 @@ class SKLARGE(Dataset):
         itemGround = loadmat(self.rootDirGt + targetName)
         edge, skeleton = itemGround['edge'], itemGround['symmetry']
         dist = bwdist(1.0 - edge.astype(float))
-        appl = np.vectorize(lambda x, y: 0 if y < 0.5 else x)
+        #appl = np.vectorize(lambda x, y: 0 if y < 0.5 else x)
         targetImage = torch.from_numpy(skeleton).float()
         return inputImage, targetImage
 
