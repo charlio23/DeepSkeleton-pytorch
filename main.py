@@ -166,7 +166,7 @@ for epoch in range(epochs):
     side4 = grayTrans(sideOuts[3][:,0,:,:])
     side5 = grayTrans(sideOuts[4][:,0,:,:])
     fuse = grayTrans(sideOuts[5][:,0,:,:])
-    avg = grayTrans(avg)
+    avg = grayTrans(avg[:,0,:,:])
     tar = grayTrans(target)
     
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
