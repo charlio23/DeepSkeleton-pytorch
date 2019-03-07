@@ -13,7 +13,6 @@ def weights_init(m):
             torch.nn.init.constant_(m.bias.data,0)
 
 def initialize_hed(path):
-    """
     net = HED()
     vgg16_items = list(torch.load(path).items())
     net.apply(weights_init)
@@ -22,16 +21,6 @@ def initialize_hed(path):
         if k.find("conv") != -1:
             net.state_dict()[k].copy_(vgg16_items[j][1])
             j += 1
-    """
-    nnet = HED().cuda()
-    dic = torch.load(path)
-    dicli = list(dic.keys())
-    new = {}
-    j = 0
-    for k in nnet.state_dict():
-        new[k] = dic[dicli[j]]
-        j += 1
-    nnet.load_state_dict(new)
     return nnet
 
 class FSDS(torch.nn.Module):
@@ -120,7 +109,6 @@ class FSDS(torch.nn.Module):
         self.fuseScale3 = torch.nn.Conv2d(in_channels=2, out_channels=1,
             kernel_size=1, stride=1, padding=0)
         
-  
         self.softmax = torch.nn.Softmax(dim=1)
         
     def forward(self, image):
@@ -144,7 +132,12 @@ class FSDS(torch.nn.Module):
         sideOut3 = interpolate(self.sideOut3(conv3), size=(height,width), mode='bilinear', align_corners=False)
         sideOut4 = interpolate(self.sideOut4(conv4), size=(height,width), mode='bilinear', align_corners=False)
         sideOut5 = interpolate(self.sideOut5(conv5), size=(height,width), mode='bilinear', align_corners=False)
-        
+
+        sideOut2 = self.softmax(sideOut2)
+        sideOut3 = self.softmax(sideOut3)
+        sideOut4 = self.softmax(sideOut4)
+        sideOut5 = self.softmax(sideOut5)
+
         fuse0 = torch.cat((sideOut2[:,0:1,:,:], sideOut3[:,0:1,:,:], sideOut4[:,0:1,:,:], sideOut5[:,0:1,:,:] ),1)
         fuse1 = torch.cat((sideOut2[:,1:2,:,:], sideOut3[:,1:2,:,:], sideOut4[:,1:2,:,:], sideOut5[:,1:2,:,:] ),1)
         fuse2 = torch.cat((sideOut3[:,2:3,:,:], sideOut4[:,2:3,:,:], sideOut5[:,2:3,:,:] ),1)
@@ -157,11 +150,6 @@ class FSDS(torch.nn.Module):
         fuse3 = self.fuseScale3(fuse3)
         
         fuse = torch.cat((fuse0,fuse1,fuse2,fuse3,fuse4),1)
-
-        sideOut2 = self.softmax(sideOut2)
-        sideOut3 = self.softmax(sideOut3)
-        sideOut4 = self.softmax(sideOut4)
-        sideOut5 = self.softmax(sideOut5)
         fuse = self.softmax(fuse)
         
         return sideOut2, sideOut3, sideOut4, sideOut5, fuse
