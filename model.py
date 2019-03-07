@@ -1,19 +1,20 @@
 import torch 
 from torch.nn.functional import interpolate
-from torch import sigmoid
 
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv2d') != -1:
-        if m.in_channels == 5:
-            torch.nn.init.constant_(m.weight.data,0.2)
+        print(classname, m.in_channels)
+        if m.in_channels < 5:
+            n = float(m.in_channels)
+            torch.nn.init.constant_(m.weight.data,1/n)
         else:
             torch.nn.init.constant_(m.weight.data,0)
         if m.bias is not None:
             torch.nn.init.constant_(m.bias.data,0)
-
-def initialize_hed(path):
-    net = HED()
+        
+def initialize_fsds(path):
+    net = FSDS()
     vgg16_items = list(torch.load(path).items())
     net.apply(weights_init)
     j = 0
@@ -21,7 +22,7 @@ def initialize_hed(path):
         if k.find("conv") != -1:
             net.state_dict()[k].copy_(vgg16_items[j][1])
             j += 1
-    return nnet
+    return net
 
 class FSDS(torch.nn.Module):
     def __init__(self):
