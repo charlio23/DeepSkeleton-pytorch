@@ -1,5 +1,5 @@
 from dataset import SKLARGE
-from model import initialize_hed
+from model import initialize_fsds
 from torch.utils.data import DataLoader, ConcatDataset
 import torchvision.transforms as transforms
 import torch
@@ -35,10 +35,10 @@ trainDS = SKLARGE(rootDirImgTrain, rootDirGtTrain)
 print("Initializing network...")
 
 
-#modelPath = "model/vgg16.pth"
-modelPath = "HED.pth"
+modelPath = "model/vgg16.pth"
 
-nnet = torch.nn.DataParallel(initialize_hed(modelPath)).cuda()
+
+nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
 
 train = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=4)
 
@@ -53,33 +53,20 @@ initializationNestedFilters = 0
 initializationFusionWeights = 1/5
 weightDecay = 0.0002
 ###
-"""
-def balanced_cross_entropy(input, target):            
-    pos_index = (target >0.5)
-    neg_index = (target <0.5)        
-    weight = torch.Tensor(input.size()).fill_(0)
-    pos_num = pos_index.sum().item()
-    neg_num = neg_index.sum().item()
-    sum_num = pos_num + neg_num
-    weight[pos_index] = neg_num*1.0 / sum_num
-    weight[neg_index] = pos_num*1.0 / sum_num
-    weight = weight.cuda()
 
-    loss = binary_cross_entropy(input, target, weight, reduction='none')
-    batch = target.shape[0]
+def cross_entropy(input, target):            
+    return 1
 
-    return torch.sum(loss)/batch
-
-    # Optimizer settings.
+# Optimizer settings.
 net_parameters_id = defaultdict(list)
 for name, param in nnet.named_parameters():
     if name in ['module.conv1.0.weight', 'module.conv1.2.weight',
-                'module.conv2.0.weight', 'module.conv2.1.weight',
+                'module.conv2.1.weight', 'module.conv2.3.weight',
                 'module.conv3.1.weight', 'module.conv3.3.weight', 'module.conv3.5.weight',
                 'module.conv4.1.weight', 'module.conv4.3.weight', 'module.conv4.5.weight']:
         print('{:26} lr:    1 decay:1'.format(name)); net_parameters_id['conv1-4.weight'].append(param)
     elif name in ['module.conv1.0.bias', 'module.conv1.2.bias',
-                'module.conv2.0.bias', 'module.conv2.1.bias',
+                'module.conv2.1.bias', 'module.conv2.3.bias',
                 'module.conv3.1.bias', 'module.conv3.3.bias', 'module.conv3.5.bias',
                 'module.conv4.1.bias', 'module.conv4.3.bias', 'module.conv4.5.bias']:
         print('{:26} lr:    2 decay:0'.format(name)); net_parameters_id['conv1-4.bias'].append(param)
@@ -93,10 +80,15 @@ for name, param in nnet.named_parameters():
     elif name in ['module.sideOut1.bias', 'module.sideOut2.bias',
                   'module.sideOut3.bias', 'module.sideOut4.bias', 'module.sideOut5.bias']:
         print('{:26} lr: 0.02 decay:0'.format(name)); net_parameters_id['score_dsn_1-5.bias'].append(param)
-    elif name in ['module.fuse.weight']:
+    elif name in ['module.fuseScale0.weight', 'module.fuseScale1.weight',
+                  'module.fuseScale2.weight', 'module.fuseScale3.weight']:
         print('{:26} lr:0.001 decay:1'.format(name)); net_parameters_id['score_final.weight'].append(param)
-    elif name in ['module.fuse.bias']:
+    elif name in ['module.fuseScale0.bias', 'module.fuseScale1.bias',
+                  'module.fuseScale2.bias', 'module.fuseScale3.bias']:
         print('{:26} lr:0.002 decay:0'.format(name)); net_parameters_id['score_final.bias'].append(param)
+exit()
+
+# IMPORTANT: In the official implementation paper, they specify that the lr is 5 times the base learning rate, contrary to their caffe code version
 
 # Create optimizer.
 optimizer = torch.optim.SGD([
@@ -180,6 +172,3 @@ for epoch in range(epochs):
     plt.ylabel("Loss")
     plt.savefig("images/loss.png")
     plt.clf()
-
-
-"""

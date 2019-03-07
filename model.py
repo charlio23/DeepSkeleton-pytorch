@@ -4,7 +4,6 @@ from torch.nn.functional import interpolate
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv2d') != -1:
-        print(classname, m.in_channels)
         if m.in_channels < 5:
             n = float(m.in_channels)
             torch.nn.init.constant_(m.weight.data,1/n)
