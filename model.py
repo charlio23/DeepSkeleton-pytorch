@@ -34,9 +34,9 @@ def initialize_hed(path):
     nnet.load_state_dict(new)
     return nnet
 
-class HED(torch.nn.Module):
+class FSDS(torch.nn.Module):
     def __init__(self):
-        super(HED, self).__init__()
+        super(FSDS, self).__init__()
 
         self.conv1 = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3,
@@ -96,24 +96,33 @@ class HED(torch.nn.Module):
             torch.nn.ReLU(inplace=False)
         )
 
-        self.sideOut1 = torch.nn.Conv2d(in_channels=64, out_channels=1,
+        self.sideOut2 = torch.nn.Conv2d(in_channels=128, out_channels=2,
             kernel_size=1, stride=1, padding=0)
 
-        self.sideOut2 = torch.nn.Conv2d(in_channels=128, out_channels=1,
+        self.sideOut3 = torch.nn.Conv2d(in_channels=256, out_channels=3,
             kernel_size=1, stride=1, padding=0)
 
-        self.sideOut3 = torch.nn.Conv2d(in_channels=256, out_channels=1,
+        self.sideOut4 = torch.nn.Conv2d(in_channels=512, out_channels=4,
             kernel_size=1, stride=1, padding=0)
 
-        self.sideOut4 = torch.nn.Conv2d(in_channels=512, out_channels=1,
+        self.sideOut5 = torch.nn.Conv2d(in_channels=512, out_channels=5,
             kernel_size=1, stride=1, padding=0)
 
-        self.sideOut5 = torch.nn.Conv2d(in_channels=512, out_channels=1,
+        self.fuseScale0 = torch.nn.Conv2d(in_channels=4, out_channels=1,
             kernel_size=1, stride=1, padding=0)
 
-        self.fuse = torch.nn.Conv2d(in_channels=5, out_channels=1,
+        self.fuseScale1 = torch.nn.Conv2d(in_channels=4, out_channels=1,
             kernel_size=1, stride=1, padding=0)
 
+        self.fuseScale2 = torch.nn.Conv2d(in_channels=3, out_channels=1,
+            kernel_size=1, stride=1, padding=0)
+
+        self.fuseScale3 = torch.nn.Conv2d(in_channels=2, out_channels=1,
+            kernel_size=1, stride=1, padding=0)
+        
+  
+        self.softmax = torch.nn.Softmax(dim=1)
+        
     def forward(self, image):
 
         tensorBlue = (image[:, 0:1, :, :] * 255.0) - 104.00698793
@@ -130,20 +139,29 @@ class HED(torch.nn.Module):
 
         height = image.size(2)
         width = image.size(3)
-
-        sideOut1 = interpolate(self.sideOut1(conv1), size=(height,width), mode='bilinear', align_corners=False)
+        
         sideOut2 = interpolate(self.sideOut2(conv2), size=(height,width), mode='bilinear', align_corners=False)
         sideOut3 = interpolate(self.sideOut3(conv3), size=(height,width), mode='bilinear', align_corners=False)
         sideOut4 = interpolate(self.sideOut4(conv4), size=(height,width), mode='bilinear', align_corners=False)
         sideOut5 = interpolate(self.sideOut5(conv5), size=(height,width), mode='bilinear', align_corners=False)
+        
+        fuse0 = torch.cat((sideOut2[:,0:1,:,:], sideOut3[:,0:1,:,:], sideOut4[:,0:1,:,:], sideOut5[:,0:1,:,:] ),1)
+        fuse1 = torch.cat((sideOut2[:,1:2,:,:], sideOut3[:,1:2,:,:], sideOut4[:,1:2,:,:], sideOut5[:,1:2,:,:] ),1)
+        fuse2 = torch.cat((sideOut3[:,2:3,:,:], sideOut4[:,2:3,:,:], sideOut5[:,2:3,:,:] ),1)
+        fuse3 = torch.cat((sideOut4[:,3:4,:,:], sideOut5[:,3:4,:,:] ),1)
+        fuse4 = sideOut5[:,4:5,:,:]
+        
+        fuse0 = self.fuseScale0(fuse0)
+        fuse1 = self.fuseScale1(fuse1)
+        fuse2 = self.fuseScale2(fuse2)
+        fuse3 = self.fuseScale3(fuse3)
+        
+        fuse = torch.cat((fuse0,fuse1,fuse2,fuse3,fuse4),1)
 
-        fuse = self.fuse(torch.cat((sideOut1, sideOut2, sideOut3, sideOut4, sideOut5), 1))
-
-        sideOut1 = sigmoid(sideOut1)
-        sideOut2 = sigmoid(sideOut2)
-        sideOut3 = sigmoid(sideOut3)
-        sideOut4 = sigmoid(sideOut4)
-        sideOut5 = sigmoid(sideOut5)
-        fuse = sigmoid(fuse)
-
-        return sideOut1, sideOut2, sideOut3, sideOut4, sideOut5, fuse 
+        sideOut2 = self.softmax(sideOut2)
+        sideOut3 = self.softmax(sideOut3)
+        sideOut4 = self.softmax(sideOut4)
+        sideOut5 = self.softmax(sideOut5)
+        fuse = self.softmax(fuse)
+        
+        return sideOut2, sideOut3, sideOut4, sideOut5, fuse
