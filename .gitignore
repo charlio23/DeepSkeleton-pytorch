@@ -2,6 +2,7 @@ BSDS500
 HED-BSDS
 images
 model
+SK-LARGE
 __pycache__
 .ipynb_checkpoints
 *.ipynb

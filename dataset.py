@@ -26,9 +26,17 @@ class SKLARGE(Dataset):
         itemGround = loadmat(self.rootDirGt + targetName)
         edge, skeleton = itemGround['edge'], itemGround['symmetry']
         dist = bwdist(1.0 - edge.astype(float))
-        #appl = np.vectorize(lambda x, y: 0 if y < 0.5 else x)
-        targetImage = torch.from_numpy(skeleton).float()
-        return inputImage, targetImage
+        make_scale = np.vectorize(lambda x, y: 0 if y < 0.5 else x)
+        #These should be parameters of the class
+        receptive_fields = np.array([14,40,92,196])
+        p = 1.2
+        ####
+        quantise = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
+        scale = make_scale(dist,skeleton)
+        quantization = quantise(scale)
+        scaleTarget = torch.from_numpy(scale).float().unsqueeze_(0)
+        quantiseTarget = torch.from_numpy(quantization).unsqueeze_(0)
+        return inputImage, scaleTarget, quantiseTarget
 
 """
 class SKLARGE_TEST(Dataset):

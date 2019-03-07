@@ -17,7 +17,7 @@ from torch.optim import lr_scheduler
 from collections import defaultdict
 
 def grayTrans(img):
-    img = img.data.cpu().numpy()[0]*255.0
+    img = img.data.cpu().numpy()[0][0]*255.0
     img = (img).astype(np.uint8)
     img = Image.fromarray(img, 'L')
     return img
@@ -29,21 +29,14 @@ rootDirGtTrain = "data/groundTruth/train/"
 rootDirImgTest = "data/images/test/"
 rootDirGtTest = "data/groundTruth/test/"
 
-preprocessed = False # Set this to False if you want to preprocess the data
 trainDS = SKLARGE(rootDirImgTrain, rootDirGtTrain)
-#valDS = BSDS(rootDirImgVal, rootDirGtVal, preprocessed)
 #trainDS = ConcatDataset([trainDS,valDS])
-
-
-# Uncoment if you want to do preprocessing (.mat -> .png)
-#trainDS.preprocess()
-#valDS.preprocess()
-#testDS.preprocess()
 
 print("Initializing network...")
 
 
-modelPath = "model/vgg16.pth"
+#modelPath = "model/vgg16.pth"
+modelPath = "HED.pth"
 
 nnet = torch.nn.DataParallel(initialize_hed(modelPath)).cuda()
 
@@ -60,7 +53,7 @@ initializationNestedFilters = 0
 initializationFusionWeights = 1/5
 weightDecay = 0.0002
 ###
-
+"""
 def balanced_cross_entropy(input, target):            
     pos_index = (target >0.5)
     neg_index = (target <0.5)        
@@ -139,8 +132,8 @@ for epoch in range(epochs):
 
         image, target = Variable(image).cuda(), Variable(target).cuda()
         sideOuts = nnet(image)
-        loss = sum([balanced_cross_entropy(sideOut[:,0,:,:], target) for sideOut in sideOuts[:-1]])
-        loss6 = binary_cross_entropy(sideOuts[-1][:,0,:,:], target)
+        loss = sum([balanced_cross_entropy(sideOut, target) for sideOut in sideOuts[:-1]])
+        loss6 = binary_cross_entropy(sideOuts[-1], target)
         loss += loss6
         lossAvg = loss/train_size
         lossAvg.backward()
@@ -160,13 +153,13 @@ for epoch in range(epochs):
 
     # transform to grayscale images
     avg = sum(sideOuts)/6
-    side1 = grayTrans(sideOuts[0][:,0,:,:])
-    side2 = grayTrans(sideOuts[1][:,0,:,:])
-    side3 = grayTrans(sideOuts[2][:,0,:,:])
-    side4 = grayTrans(sideOuts[3][:,0,:,:])
-    side5 = grayTrans(sideOuts[4][:,0,:,:])
-    fuse = grayTrans(sideOuts[5][:,0,:,:])
-    avg = grayTrans(avg[:,0,:,:])
+    side1 = grayTrans(sideOuts[0])
+    side2 = grayTrans(sideOuts[1])
+    side3 = grayTrans(sideOuts[2])
+    side4 = grayTrans(sideOuts[3])
+    side5 = grayTrans(sideOuts[4])
+    fuse = grayTrans(sideOuts[5])
+    avg = grayTrans(avg)
     tar = grayTrans(target)
     
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
@@ -189,3 +182,4 @@ for epoch in range(epochs):
     plt.clf()
 
 
+"""
