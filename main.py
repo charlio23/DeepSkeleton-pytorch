@@ -105,7 +105,7 @@ def balanced_cross_entropy(input, target):
     #weights
     weights = []
     for i in range(0,input.size(1)):
-        weights.append(1.0/torch.sum(target == i).item())
+        weights.append(torch.sum(target == i).item())
     weight_total = sum(weights)
     weights = (torch.tensor(weights).float()/weight_total).cuda()
     #CE loss
@@ -125,7 +125,7 @@ def generate_quantise(quantise):
 
 print("Training started")
 
-epochs = 100
+epochs = 20
 i = 0
 dispInterval = 500
 lossAcc = 0.0
@@ -144,7 +144,6 @@ for epoch in range(epochs):
         quant_list = generate_quantise(quantise)
         loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
 
-        print(loss)
         break
         
         lossAvg = loss/train_size
