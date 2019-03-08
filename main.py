@@ -24,24 +24,16 @@ def grayTrans(img):
 
 print("Importing datasets...")
 
-rootDirImgTrain = "data/images/train/"
-rootDirGtTrain = "data/groundTruth/train/"
-rootDirImgTest = "data/images/test/"
-rootDirGtTest = "data/groundTruth/test/"
+rootDir = "SK-LARGE/"
+trainListPath = "SK-LARGE/aug_data/train_pair.lst"
 
-trainDS = SKLARGE(rootDirImgTrain, rootDirGtTrain)
-#trainDS = ConcatDataset([trainDS,valDS])
+trainDS = SKLARGE(rootDir, trainListPath)
+train = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=4)
 
 print("Initializing network...")
 
-
 modelPath = "model/vgg16.pth"
-
-
 nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
-
-train = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=4)
-
 
 print("Defining hyperparameters...")
 
@@ -52,6 +44,8 @@ lossWeight = 1
 initializationNestedFilters = 0
 initializationFusionWeights = 1/5
 weightDecay = 0.0002
+receptive_fields = np.array([14,40,92,196])
+p = 1.2
 ###
 
 # Optimizer settings.
@@ -142,10 +136,13 @@ soft = torch.nn.Softmax(dim=1)
 for epoch in range(epochs):
     print("Epoch: " + str(epoch + 1))
     for j, data in enumerate(tqdm(train), 0):
-        image, scale, quantise = data
-        image, scale, quantise = Variable(image).cuda(), Variable(scale).cuda(), Variable(quantise).cuda()
-        sideOuts = nnet(image)
+        image, scale = data
+        image = Variable(image).cuda()
+        quantization = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
+        quantise = torch.from_numpy(quantization(scale.numpy())).squeeze_(1).cuda()
         quant_list = generate_quantise(quantise)
+        #scale = Variable(scale).cuda()
+        sideOuts = nnet(image)
         loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
 
         lossAvg = loss/train_size
