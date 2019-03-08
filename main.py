@@ -109,7 +109,7 @@ def balanced_cross_entropy(input, target):
     weight_total = sum(weights)
     weights = (torch.tensor(weights).float()/weight_total).cuda()
     #CE loss
-    loss = cross_entropy(input,target,weight=weights,reduction='none')
+    loss = cross_entropy(input,target,weight=weights,reduction='mean')
     batch = target.shape[0]
 
     return torch.sum(loss)/batch
