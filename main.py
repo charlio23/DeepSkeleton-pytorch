@@ -122,7 +122,7 @@ for epoch in range(epochs):
         image, scale, quantise = data
         image, scale, quantise = Variable(image).cuda(), Variable(scale).cuda(), Variable(quantise).cuda()
         sideOuts = nnet(image)
-        loss = sum([balanced_cross_entropy(sideOut, target) for sideOut in sideOuts])
+        loss = sum([balanced_cross_entropy(sideOut, quantise) for sideOut in sideOuts])
         print(quantise.size())
         for side in sideOuts:
             print(side.size())
