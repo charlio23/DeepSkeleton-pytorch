@@ -122,7 +122,7 @@ def balanced_cross_entropy(input, target):
 def generate_quantise(quantise):
     result = []
     for i in range(1,5):
-        print((quantise*(quantise <= i).int()).max())
+        print((quantise*(quantise <= i).long()).max())
         result.append(quantise*(quantise <= i).long())
 
     result.append(quantise)
