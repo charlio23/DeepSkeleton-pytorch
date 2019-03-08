@@ -112,6 +112,7 @@ def generate_quantise(quantise):
         print((quantise*(quantise <= i).int()).max())
         result.append(quantise*(quantise <= i).int())
 
+    result.append(quantise)
     return result
 print("Training started")
 
