@@ -18,6 +18,7 @@ def initialize_fsds(path):
     net.apply(weights_init)
     j = 0
     for k, v in net.state_dict().items():
+        print(k)
         if k.find("conv") != -1:
             net.state_dict()[k].copy_(vgg16_items[j][1])
             j += 1

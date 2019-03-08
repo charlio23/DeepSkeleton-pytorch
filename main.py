@@ -137,6 +137,7 @@ epoch_line = []
 loss_line = []
 nnet.train()
 optimizer.zero_grad()
+soft = torch.nn.Softmax(dim=1)
 
 for epoch in range(epochs):
     print("Epoch: " + str(epoch + 1))
@@ -170,7 +171,7 @@ for epoch in range(epochs):
     # transform to grayscale images
 
     for i in range(0,5):
-        grayTrans((sideOuts[i].max(1)[1]) > 0.5).save('images/sample_' + str(i+1) + '.png')
+        grayTrans((1 - soft(sideOuts[i])[0][0]).unsqueeze_(0)).save('images/sample_' + str(i+1) + '.png')
     grayTrans((quantise > 0.5)).save('images/sample_T.png')
 
     torch.save(nnet.state_dict(), 'FSDS.pth')
