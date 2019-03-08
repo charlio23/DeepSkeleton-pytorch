@@ -109,7 +109,7 @@ def balanced_cross_entropy(input, target):
 def generate_quantise(quantise):
     result = []
     for i in range(1,5):
-        print((quantise <= i))
+        print((quantise*(quantise <= i).int()).max())
         result.append(quantise*(quantise <= i).int())
 
     return result
@@ -130,11 +130,11 @@ for epoch in range(epochs):
     for j, data in enumerate(tqdm(train), 0):
         image, scale, quantise = data
         image, scale, quantise = Variable(image).cuda(), Variable(scale).cuda(), Variable(quantise).cuda()
-        #sideOuts = nnet(image)
+        sideOuts = nnet(image)
         quant_list = generate_quantise(quantise)
-        #loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
+        loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
 
-        #print(loss)
+        print(loss)
         exit()
         
         lossAvg = loss/train_size
