@@ -133,16 +133,16 @@ class FSDS(torch.nn.Module):
         sideOut4 = interpolate(self.sideOut4(conv4), size=(height,width), mode='bilinear', align_corners=False)
         sideOut5 = interpolate(self.sideOut5(conv5), size=(height,width), mode='bilinear', align_corners=False)
 
-        sideOut2 = self.softmax(sideOut2)
-        sideOut3 = self.softmax(sideOut3)
-        sideOut4 = self.softmax(sideOut4)
-        sideOut5 = self.softmax(sideOut5)
+        softSideOut2 = self.softmax(sideOut2)
+        softSideOut3 = self.softmax(sideOut3)
+        softSideOut4 = self.softmax(sideOut4)
+        softSideOut5 = self.softmax(sideOut5)
 
-        fuse0 = torch.cat((sideOut2[:,0:1,:,:], sideOut3[:,0:1,:,:], sideOut4[:,0:1,:,:], sideOut5[:,0:1,:,:] ),1)
-        fuse1 = torch.cat((sideOut2[:,1:2,:,:], sideOut3[:,1:2,:,:], sideOut4[:,1:2,:,:], sideOut5[:,1:2,:,:] ),1)
-        fuse2 = torch.cat((sideOut3[:,2:3,:,:], sideOut4[:,2:3,:,:], sideOut5[:,2:3,:,:] ),1)
-        fuse3 = torch.cat((sideOut4[:,3:4,:,:], sideOut5[:,3:4,:,:] ),1)
-        fuse4 = sideOut5[:,4:5,:,:]
+        fuse0 = torch.cat((softSideOut2[:,0:1,:,:], softSideOut3[:,0:1,:,:], softSideOut4[:,0:1,:,:], softSideOut5[:,0:1,:,:] ),1)
+        fuse1 = torch.cat((softSideOut2[:,1:2,:,:], softSideOut3[:,1:2,:,:], softSideOut4[:,1:2,:,:], softSideOut5[:,1:2,:,:] ),1)
+        fuse2 = torch.cat((softSideOut3[:,2:3,:,:], softSideOut4[:,2:3,:,:], softSideOut5[:,2:3,:,:] ),1)
+        fuse3 = torch.cat((softSideOut4[:,3:4,:,:], softSideOut5[:,3:4,:,:] ),1)
+        fuse4 = softSideOut5[:,4:5,:,:]
         
         fuse0 = self.fuseScale0(fuse0)
         fuse1 = self.fuseScale1(fuse1)
@@ -150,6 +150,7 @@ class FSDS(torch.nn.Module):
         fuse3 = self.fuseScale3(fuse3)
         
         fuse = torch.cat((fuse0,fuse1,fuse2,fuse3,fuse4),1)
-        fuse = self.softmax(fuse)
         
+        #we do not ouptut softmax funtions as they are calculated with the cross entropy loss
+
         return sideOut2, sideOut3, sideOut4, sideOut5, fuse

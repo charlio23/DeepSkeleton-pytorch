@@ -17,7 +17,7 @@ from torch.optim import lr_scheduler
 from collections import defaultdict
 
 def grayTrans(img):
-    img = img.data.cpu().numpy()[0][0]*255.0
+    img = img.data.cpu().numpy()[0]*255.0
     img = (img).astype(np.uint8)
     img = Image.fromarray(img, 'L')
     return img
@@ -102,21 +102,16 @@ optimizer = torch.optim.SGD([
 lr_schd = lr_scheduler.StepLR(optimizer, step_size=1e4, gamma=0.1)
 
 def balanced_cross_entropy(input, target):
-    print("Reckoning CE Loss with" + str(input.size(1)) + " classes...")
-    print("input size", input.size())
-    print("target size", target.size())
     #weights
     weights = []
     for i in range(0,input.size(1)):
-        weights.append(torch.sum(target == i).item())
+        weights.append(1.0/torch.sum(target == i).item())
     weight_total = sum(weights)
     weights = (torch.tensor(weights).float()/weight_total).cuda()
-    print(weights)
+    #CE loss
     loss = cross_entropy(input,target,weight=weights,reduction='none')
-    print(loss)
-    print(loss.size())
-    print("-----")
     batch = target.shape[0]
+
     return torch.sum(loss)/batch
 
 def generate_quantise(quantise):
@@ -150,7 +145,7 @@ for epoch in range(epochs):
         loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
 
         print(loss)
-        exit()
+        break
         
         lossAvg = loss/train_size
         lossAvg.backward()
@@ -169,34 +164,21 @@ for epoch in range(epochs):
             lossAcc = 0.0
         i += 1
 
-    # transform to grayscale images
-    """
-    avg = sum(sideOuts)/6
-    side1 = grayTrans(sideOuts[0])
-    side2 = grayTrans(sideOuts[1])
-    side3 = grayTrans(sideOuts[2])
-    side4 = grayTrans(sideOuts[3])
-    side5 = grayTrans(sideOuts[4])
-    fuse = grayTrans(sideOuts[5])
-    avg = grayTrans(avg)
-    tar = grayTrans(target)
-    
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
     plt.savefig("images/sample_0.png")
-    side1.save('images/sample_1.png')
-    side2.save('images/sample_2.png')
-    side3.save('images/sample_3.png')
-    side4.save('images/sample_4.png')
-    side5.save('images/sample_5.png')
-    fuse.save('images/sample_6.png')
-    avg.save('images/sample_7.png')
-    tar.save('images/sample_T.png')
 
-    torch.save(nnet.state_dict(), 'HED.pth')
+    # transform to grayscale images
+
+    for i in range(0,5):
+        grayTrans((sideOuts[i].max(1)[1]) > 0.5).save('images/sample_' + str(i+1) + '.png')
+    grayTrans((quantise > 0.5)).save('images/sample_T.png')
+
+    torch.save(nnet.state_dict(), 'FSDS.pth')
     plt.clf()
     plt.plot(epoch_line,loss_line)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.savefig("images/loss.png")
     plt.clf()
-    """
+
+    exit()
