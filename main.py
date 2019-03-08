@@ -83,7 +83,6 @@ for name, param in nnet.named_parameters():
     elif name in ['module.fuseScale0.bias', 'module.fuseScale1.bias',
                   'module.fuseScale2.bias', 'module.fuseScale3.bias']:
         print('{:26} lr:0.002 decay:0'.format(name)); net_parameters_id['score_final.bias'].append(param)
-exit()
 
 # IMPORTANT: In the official implementation paper, they specify that the lr is 5 times the base learning rate, contrary to their caffe code version
 
