@@ -101,9 +101,17 @@ optimizer = torch.optim.SGD([
 # Learning rate scheduler.
 lr_schd = lr_scheduler.StepLR(optimizer, step_size=1e4, gamma=0.1)
 
-def balanced_cross_entropy(input, target):            
+def balanced_cross_entropy(input, target):
+    print(input.size())
+    print(target.size())        
     return 1
 
+def generate_quantise(quantise):
+    result = []
+    for i in range(1,5):
+        result.append(quantise*(quantise <= i))
+
+    return result
 print("Training started")
 
 epochs = 100
@@ -122,10 +130,9 @@ for epoch in range(epochs):
         image, scale, quantise = data
         image, scale, quantise = Variable(image).cuda(), Variable(scale).cuda(), Variable(quantise).cuda()
         sideOuts = nnet(image)
-        loss = sum([balanced_cross_entropy(sideOut, quantise) for sideOut in sideOuts])
-        print(quantise.size())
-        for side in sideOuts:
-            print(side.size())
+        quant_list = generate_quantise(quantise)
+        loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
+
         print(loss)
         exit()
         
