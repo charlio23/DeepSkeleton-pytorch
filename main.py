@@ -136,13 +136,13 @@ optimizer.zero_grad()
 
 for epoch in range(epochs):
     print("Epoch: " + str(epoch + 1))
-    for j, data in enumerate(tqdm(train), 0):
+    for j, data in enumerate(train, 0):
         image, scale, quantise = data
         image, scale, quantise = Variable(image).cuda(), Variable(scale).cuda(), Variable(quantise).cuda()
         sideOuts = nnet(image)
         quant_list = generate_quantise(quantise)
         loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
-
+        print(loss)
         lossAvg = loss/train_size
         lossAvg.backward()
         lossAcc += loss.item()
