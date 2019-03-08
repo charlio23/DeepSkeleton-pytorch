@@ -105,14 +105,14 @@ def balanced_cross_entropy(input, target):
     print("Reckoning CE Loss with" + str(input.size(1)) + " classes...")
     print("input size", input.size())
     print("target size", target.size())
-    #weigths
+    #weights
     weights = []
     for i in range(0,input.size(1)):
-        weigths.append(torch.sum(target == i).item)
+        weights.append(torch.sum(target == i).item)
     weight_total = sum(weights)
-    weights = (torch.tensor(weigths).float()/weight_total).cuda()
-    print(weigths)
-    loss = cross_entropy(input,target,weight=weigths,reduction='none')
+    weights = (torch.tensor(weights).float()/weight_total).cuda()
+    print(weights)
+    loss = cross_entropy(input,target,weight=weights,reduction='none')
     print(loss)
     print(loss.size())
     print("-----")
