@@ -110,7 +110,7 @@ def generate_quantise(quantise):
     result = []
     for i in range(1,5):
         print((quantise <= i))
-        result.append(quantise*(quantise <= i).float())
+        result.append(quantise*(quantise <= i).int())
 
     return result
 print("Training started")

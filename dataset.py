@@ -34,8 +34,8 @@ class SKLARGE(Dataset):
         quantise = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
         scale = make_scale(dist,skeleton)
         quantization = quantise(scale)
-        scaleTarget = torch.from_numpy(scale).float().unsqueeze_(0)
-        quantiseTarget = torch.from_numpy(quantization).unsqueeze_(0)
+        scaleTarget = torch.from_numpy(scale).float().unsqueeze_(0).int()
+        quantiseTarget = torch.from_numpy(quantization).unsqueeze_(0).int()
         return inputImage, scaleTarget, quantiseTarget
 
 """
