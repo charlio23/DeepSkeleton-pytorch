@@ -123,7 +123,7 @@ def generate_quantise(quantise):
     result = []
     for i in range(1,5):
         print((quantise*(quantise <= i).int()).max())
-        result.append(quantise*(quantise <= i).int())
+        result.append(quantise*(quantise <= i).long())
 
     result.append(quantise)
     return result
