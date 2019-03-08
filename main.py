@@ -54,9 +54,6 @@ initializationFusionWeights = 1/5
 weightDecay = 0.0002
 ###
 
-def cross_entropy(input, target):            
-    return 1
-
 # Optimizer settings.
 net_parameters_id = defaultdict(list)
 for name, param in nnet.named_parameters():
@@ -105,6 +102,9 @@ optimizer = torch.optim.SGD([
 # Learning rate scheduler.
 lr_schd = lr_scheduler.StepLR(optimizer, step_size=1e4, gamma=0.1)
 
+def balanced_cross_entropy(input, target):            
+    return 1
+
 print("Training started")
 
 epochs = 100
@@ -120,16 +120,20 @@ optimizer.zero_grad()
 for epoch in range(epochs):
     print("Epoch: " + str(epoch + 1))
     for j, data in enumerate(tqdm(train), 0):
-        image, target = data
-
-        image, target = Variable(image).cuda(), Variable(target).cuda()
+        image, scale, quantise = data
+        image, scale, quantise = Variable(image).cuda(), Variable(scale).cuda(), Variable(quantise).cuda()
         sideOuts = nnet(image)
-        loss = sum([balanced_cross_entropy(sideOut, target) for sideOut in sideOuts[:-1]])
-        loss6 = binary_cross_entropy(sideOuts[-1], target)
-        loss += loss6
+        loss = sum([balanced_cross_entropy(sideOut, target) for sideOut in sideOuts])
+        print(quantise.size())
+        for side in sideOuts:
+            print(side.size())
+        print(loss)
+        exit()
+        
         lossAvg = loss/train_size
         lossAvg.backward()
         lossAcc += loss.item()
+
         if (j+1) % train_size == 0:
             optimizer.step()
             optimizer.zero_grad()
@@ -144,6 +148,7 @@ for epoch in range(epochs):
         i += 1
 
     # transform to grayscale images
+    """
     avg = sum(sideOuts)/6
     side1 = grayTrans(sideOuts[0])
     side2 = grayTrans(sideOuts[1])
@@ -172,3 +177,4 @@ for epoch in range(epochs):
     plt.ylabel("Loss")
     plt.savefig("images/loss.png")
     plt.clf()
+    """
