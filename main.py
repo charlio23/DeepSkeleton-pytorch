@@ -105,7 +105,11 @@ def balanced_cross_entropy(input, target):
     #weights
     weights = []
     for i in range(0,input.size(1)):
-        weights.append(torch.sum(target == i).item())
+        w = torch.sum(target == i).item()
+        if w < 1e-7:
+            weights.append(0)
+        else:
+            weights.append(1.0/w)
     weight_total = sum(weights)
     weights = (torch.tensor(weights).float()/weight_total).cuda()
     #CE loss
