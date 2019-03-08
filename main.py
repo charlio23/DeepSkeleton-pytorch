@@ -117,7 +117,6 @@ def balanced_cross_entropy(input, target):
 def generate_quantise(quantise):
     result = []
     for i in range(1,5):
-        print((quantise*(quantise <= i).long()).max())
         result.append(quantise*(quantise <= i).long())
 
     result.append(quantise)
@@ -144,8 +143,6 @@ for epoch in range(epochs):
         quant_list = generate_quantise(quantise)
         loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
 
-        break
-        
         lossAvg = loss/train_size
         lossAvg.backward()
         lossAcc += loss.item()
@@ -179,5 +176,3 @@ for epoch in range(epochs):
     plt.ylabel("Loss")
     plt.savefig("images/loss.png")
     plt.clf()
-
-    exit()
