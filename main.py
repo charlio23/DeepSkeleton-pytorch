@@ -88,8 +88,8 @@ optimizer = torch.optim.SGD([
     {'params': net_parameters_id['conv5.bias']          , 'lr': learningRate*200  , 'weight_decay': 0.},
     {'params': net_parameters_id['score_dsn_1-5.weight'], 'lr': learningRate*0.01 , 'weight_decay': weightDecay},
     {'params': net_parameters_id['score_dsn_1-5.bias']  , 'lr': learningRate*0.02 , 'weight_decay': 0.},
-    {'params': net_parameters_id['score_final.weight']  , 'lr': learningRate*0.001, 'weight_decay': weightDecay},
-    {'params': net_parameters_id['score_final.bias']    , 'lr': learningRate*0.002, 'weight_decay': 0.},
+    {'params': net_parameters_id['score_final.weight']  , 'lr': learningRate*5, 'weight_decay': weightDecay},
+    {'params': net_parameters_id['score_final.bias']    , 'lr': learningRate*5, 'weight_decay': 0.},
 ], lr=learningRate, momentum=momentum, weight_decay=weightDecay)
 
 # Learning rate scheduler.
@@ -107,7 +107,7 @@ def balanced_cross_entropy(input, target):
     weight_total = sum(weights)
     weights = (torch.tensor(weights).float()/weight_total).cuda()
     #CE loss
-    loss = cross_entropy(input,target,weight=weights,reduction='mean')
+    loss = cross_entropy(input,target,weight=weights,reduction='none')
     batch = target.shape[0]
 
     return torch.sum(loss)/batch
@@ -144,15 +144,15 @@ for epoch in range(epochs):
         #scale = Variable(scale).cuda()
         sideOuts = nnet(image)
         loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
-
-        lossAvg = loss/train_size
-        lossAvg.backward()
+        loss.backward()
+        #lossAvg = loss/train_size
+        #lossAvg.backward()
         lossAcc += loss.item()
 
-        if (j+1) % train_size == 0:
-            optimizer.step()
-            optimizer.zero_grad()
-            lr_schd.step()
+        #if (j+1) % train_size == 0:
+        optimizer.step()
+        optimizer.zero_grad()
+        lr_schd.step()
         if (i+1) % dispInterval == 0:
             timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             lossDisp = lossAcc/dispInterval
