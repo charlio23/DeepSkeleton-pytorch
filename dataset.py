@@ -41,7 +41,6 @@ class SKLARGE(Dataset):
         targetImage = transf(Image.open(self.rootDir + targetName).convert('L'))*255.0
         return inputImage, targetImage
 
-"""
 class SKLARGE_TEST(Dataset):
     def __init__(self, rootDirImg):
         self.rootDirImg = rootDirImg
@@ -56,6 +55,5 @@ class SKLARGE_TEST(Dataset):
         # process the images
         transf = transforms.ToTensor()
         inputImage = transf(Image.open(self.rootDirImg + inputName).convert('RGB'))
-        inputName = inputName.split(".jpg")[0] + ".bmp"
+        inputName = inputName.split(".jpg")[0] + ".png"
         return inputImage, inputName
-"""

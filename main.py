@@ -135,7 +135,7 @@ soft = torch.nn.Softmax(dim=1)
 
 for epoch in range(epochs):
     print("Epoch: " + str(epoch + 1))
-    for j, data in enumerate(tqdm(train), 0):
+    for j, data in enumerate(tqdm(train), 1):
         image, scale = data
         image = Variable(image).cuda()
         quantization = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
@@ -149,7 +149,7 @@ for epoch in range(epochs):
         #lossAvg.backward()
         lossAcc += loss.item()
 
-        #if (j+1) % train_size == 0:
+        #if j % train_size == 0:
         optimizer.step()
         optimizer.zero_grad()
         lr_schd.step()
@@ -167,8 +167,8 @@ for epoch in range(epochs):
 
     # transform to grayscale images
 
-    for i in range(0,5):
-        grayTrans((1 - soft(sideOuts[i])[0][0]).unsqueeze_(0)).save('images/sample_' + str(i+1) + '.png')
+    for k in range(0,5):
+        grayTrans((1 - soft(sideOuts[i])[0][0]).unsqueeze_(0)).save('images/sample_' + str(k+1) + '.png')
     grayTrans((quantise > 0.5)).save('images/sample_T.png')
 
     torch.save(nnet.state_dict(), 'FSDS.pth')
