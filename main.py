@@ -89,10 +89,10 @@ optimizer = torch.optim.SGD([
     {'params': net_parameters_id['conv1-4.bias']        , 'lr': learningRate*2    , 'weight_decay': 0.},
     {'params': net_parameters_id['conv5.weight']        , 'lr': learningRate*100  , 'weight_decay': weightDecay},
     {'params': net_parameters_id['conv5.bias']          , 'lr': learningRate*200  , 'weight_decay': 0.},
-    {'params': net_parameters_id['score_dsn_1-5.weight'], 'lr': learningRate*1 , 'weight_decay': weightDecay},
-    {'params': net_parameters_id['score_dsn_1-5.bias']  , 'lr': learningRate*2 , 'weight_decay': 0.},
-    {'params': net_parameters_id['score_final.weight']  , 'lr': learningRate*5, 'weight_decay': weightDecay},
-    {'params': net_parameters_id['score_final.bias']    , 'lr': learningRate*10, 'weight_decay': 0.},
+    {'params': net_parameters_id['score_dsn_1-5.weight'], 'lr': learningRate*0.01 , 'weight_decay': weightDecay},
+    {'params': net_parameters_id['score_dsn_1-5.bias']  , 'lr': learningRate*0.02 , 'weight_decay': 0.},
+    {'params': net_parameters_id['score_final.weight']  , 'lr': learningRate*0.001, 'weight_decay': weightDecay},
+    {'params': net_parameters_id['score_final.bias']    , 'lr': learningRate*0.002, 'weight_decay': 0.},
 ], lr=learningRate, momentum=momentum, weight_decay=weightDecay)
 
 # Learning rate scheduler.
