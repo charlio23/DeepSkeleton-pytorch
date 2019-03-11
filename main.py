@@ -46,6 +46,7 @@ initializationFusionWeights = 1/5
 weightDecay = 0.0002
 receptive_fields = np.array([14,40,92,196])
 p = 1.2
+L = 0.5
 ###
 
 # Optimizer settings.
@@ -115,9 +116,13 @@ def balanced_cross_entropy(input, target):
 
     return torch.sum(loss)/batch
 
-def regressor_loss(input, targetQuant, targetScale):
-    #add weight and we are done
-    loss = mse_loss(input,targetScale)
+def regressor_loss(input, targetScale, targetQuant):
+    weight = (targetQuant > 0.01).unsqueeze_(1).float()
+    weight_total = torch.sum(weight)
+    loss = torch.sum(weight*mse_loss(input, targetScale, reduction='none'))/weight_total
+    batch = targetScale.shape[0]
+    return loss/batch
+    
 
 def generate_quantise(quantise):
     result = []
@@ -154,15 +159,15 @@ for epoch in range(epochs):
         image, scale = Variable(image).cuda(), Variable(scale).cuda()
         quantization = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
         quantise = torch.from_numpy(quantization(scale.cpu().numpy())).squeeze_(1).cuda()
-        scale = scale.unsqueeze_(1)
 
         quant_list = generate_quantise(quantise)
         scale_list = generate_scales(quant_list, receptive_fields, scale)
-        #scale = Variable(scale).cuda()
         sideOuts = nnet(image)
-        
-        loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
-        
+        quantise_SO = sideOuts[0:5]
+        scale_SO = sideOuts[5:-1]
+        loss_quant = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(quantise_SO,quant_list)])
+        loss_scale = sum([regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])])
+        loss = loss_quant + L*loss_scale
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
@@ -190,13 +195,13 @@ for epoch in range(epochs):
     # transform to grayscale images
 
     for k in range(0,5):
-        grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save('images/sample_' + str(k+1) + '.png')
-    grayTrans((quantise > 0.5)).save('images/sample_T.png')
+        grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save('images/sampleLMSDS_' + str(k+1) + '.png')
+    grayTrans((quantise > 0.5)).save('images/sampleLMSDS_T.png')
 
-    torch.save(nnet.state_dict(), 'FSDS.pth')
+    torch.save(nnet.state_dict(), 'LMSDS.pth')
     plt.clf()
     plt.plot(epoch_line,loss_line)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.savefig("images/loss.png")
+    plt.savefig("images/lossLMDSD.png")
     plt.clf()
