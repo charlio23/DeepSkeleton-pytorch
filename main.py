@@ -86,14 +86,14 @@ optimizer = torch.optim.SGD([
     {'params': net_parameters_id['conv1-4.bias']        , 'lr': learningRate*2    , 'weight_decay': 0.},
     {'params': net_parameters_id['conv5.weight']        , 'lr': learningRate*100  , 'weight_decay': weightDecay},
     {'params': net_parameters_id['conv5.bias']          , 'lr': learningRate*200  , 'weight_decay': 0.},
-    {'params': net_parameters_id['score_dsn_1-5.weight'], 'lr': learningRate*0.01 , 'weight_decay': weightDecay},
-    {'params': net_parameters_id['score_dsn_1-5.bias']  , 'lr': learningRate*0.02 , 'weight_decay': 0.},
+    {'params': net_parameters_id['score_dsn_1-5.weight'], 'lr': learningRate*1 , 'weight_decay': weightDecay},
+    {'params': net_parameters_id['score_dsn_1-5.bias']  , 'lr': learningRate*2 , 'weight_decay': 0.},
     {'params': net_parameters_id['score_final.weight']  , 'lr': learningRate*5, 'weight_decay': weightDecay},
-    {'params': net_parameters_id['score_final.bias']    , 'lr': learningRate*5, 'weight_decay': 0.},
+    {'params': net_parameters_id['score_final.bias']    , 'lr': learningRate*10, 'weight_decay': 0.},
 ], lr=learningRate, momentum=momentum, weight_decay=weightDecay)
 
 # Learning rate scheduler.
-lr_schd = lr_scheduler.StepLR(optimizer, step_size=1e4, gamma=0.1)
+lr_schd = lr_scheduler.StepLR(optimizer, step_size=2e5, gamma=0.1)
 
 def balanced_cross_entropy(input, target):
     #weights
@@ -122,7 +122,7 @@ def generate_quantise(quantise):
 
 print("Training started")
 
-epochs = 20
+epochs = 40
 i = 0
 dispInterval = 500
 lossAcc = 0.0
