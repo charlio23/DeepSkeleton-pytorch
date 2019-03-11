@@ -8,7 +8,7 @@ import numpy as np
 import torch.optim as optim
 from PIL import Image
 from torch import sigmoid
-from torch.nn.functional import cross_entropy
+from torch.nn.functional import cross_entropy, mse_loss
 from torch.autograd import Variable
 import time
 from itertools import chain
@@ -115,6 +115,10 @@ def balanced_cross_entropy(input, target):
 
     return torch.sum(loss)/batch
 
+def regressor_loss(input, targetQuant, targetScale):
+    #add weight and we are done
+    loss = mse_loss(input,targetScale)
+
 def generate_quantise(quantise):
     result = []
     for i in range(1,5):
@@ -150,6 +154,7 @@ for epoch in range(epochs):
         image, scale = Variable(image).cuda(), Variable(scale).cuda()
         quantization = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
         quantise = torch.from_numpy(quantization(scale.cpu().numpy())).squeeze_(1).cuda()
+        scale = scale.unsqueeze_(1)
 
         quant_list = generate_quantise(quantise)
         scale_list = generate_scales(quant_list, receptive_fields, scale)
