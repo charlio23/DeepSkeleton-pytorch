@@ -1,5 +1,5 @@
 from dataset import SKLARGE
-from model import initialize_fsds
+from model import initialize_fsds, initialize_lmsds
 from torch.utils.data import DataLoader, ConcatDataset
 import torchvision.transforms as transforms
 import torch
@@ -33,7 +33,7 @@ train = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=4)
 print("Initializing network...")
 
 modelPath = "model/vgg16.pth"
-nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
+nnet = torch.nn.DataParallel(initialize_lmsds(modelPath)).cuda()
 
 print("Defining hyperparameters...")
 
@@ -51,6 +51,7 @@ p = 1.2
 # Optimizer settings.
 net_parameters_id = defaultdict(list)
 for name, param in nnet.named_parameters():
+    print(name)
     if name in ['module.conv1.0.weight', 'module.conv1.2.weight',
                 'module.conv2.1.weight', 'module.conv2.3.weight',
                 'module.conv3.1.weight', 'module.conv3.3.weight', 'module.conv3.5.weight',
@@ -65,11 +66,13 @@ for name, param in nnet.named_parameters():
         print('{:26} lr:  100 decay:1'.format(name)); net_parameters_id['conv5.weight'].append(param)
     elif name in ['module.conv5.1.bias', 'module.conv5.3.bias', 'module.conv5.5.bias']:
         print('{:26} lr:  200 decay:0'.format(name)); net_parameters_id['conv5.bias'].append(param)
-    elif name in ['module.sideOut1.weight', 'module.sideOut2.weight',
-                  'module.sideOut3.weight', 'module.sideOut4.weight', 'module.sideOut5.weight']:
+    elif name in ['module.sideOutLoc1.weight', 'module.sideOutLoc2.weight',
+                  'module.sideOutLoc3.weight', 'module.sideOutLoc4.weight', 'module.sideOutLoc5.weight', 'module.sideOutScale1.weight', 'module.sideOutScale2.weight',
+                  'module.sideOutScale3.weight', 'module.sideOutScale4.weight', 'module.sideOutScale5.weight']:
         print('{:26} lr: 0.01 decay:1'.format(name)); net_parameters_id['score_dsn_1-5.weight'].append(param)
-    elif name in ['module.sideOut1.bias', 'module.sideOut2.bias',
-                  'module.sideOut3.bias', 'module.sideOut4.bias', 'module.sideOut5.bias']:
+    elif name in ['module.sideOutLoc1.bias', 'module.sideOutLoc2.bias',
+                  'module.sideOutLoc3.bias', 'module.sideOutLoc4.bias', 'module.sideOutLoc5.bias', 'module.sideOutScale1.bias', 'module.sideOutScale2.bias',
+                  'module.sideOutScale3.bias', 'module.sideOutScale4.bias', 'module.sideOutScale5.bias']:
         print('{:26} lr: 0.02 decay:0'.format(name)); net_parameters_id['score_dsn_1-5.bias'].append(param)
     elif name in ['module.fuseScale0.weight', 'module.fuseScale1.weight',
                   'module.fuseScale2.weight', 'module.fuseScale3.weight']:
@@ -146,7 +149,7 @@ for epoch in range(epochs):
         sideOuts = nnet(image)
         
         loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
-
+        
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
@@ -174,7 +177,7 @@ for epoch in range(epochs):
     # transform to grayscale images
 
     for k in range(0,5):
-        grayTrans((1 - soft(sideOuts[i])[0][0]).unsqueeze_(0)).save('images/sample_' + str(k+1) + '.png')
+        grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save('images/sample_' + str(k+1) + '.png')
     grayTrans((quantise > 0.5)).save('images/sample_T.png')
 
     torch.save(nnet.state_dict(), 'FSDS.pth')
