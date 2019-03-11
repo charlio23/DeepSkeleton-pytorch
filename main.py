@@ -140,11 +140,16 @@ for epoch in range(epochs):
         image = Variable(image).cuda()
         quantization = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
         quantise = torch.from_numpy(quantization(scale.numpy())).squeeze_(1).cuda()
+
         quant_list = generate_quantise(quantise)
         #scale = Variable(scale).cuda()
         sideOuts = nnet(image)
+        
         loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
+        if np.isnan(float(loss.item())):
+            raise ValueError('loss is nan while training')
         loss.backward()
+        print(loss)
         #lossAvg = loss/train_size
         #lossAvg.backward()
         lossAcc += loss.item()
