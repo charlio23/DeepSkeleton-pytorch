@@ -123,6 +123,13 @@ def generate_quantise(quantise):
     result.append(quantise)
     return result
 
+def generate_scales(quant_list, fields, scale):
+    result = []
+    for quantise, r in zip(quant_list,fields):
+        result.append(2*((quantise).float()*scale)/r - 1)
+
+    return result
+
 print("Training started")
 
 epochs = 40
@@ -140,11 +147,12 @@ for epoch in range(epochs):
     print("Epoch: " + str(epoch + 1))
     for j, data in enumerate(tqdm(train), 1):
         image, scale = data
-        image = Variable(image).cuda()
+        image, scale = Variable(image).cuda(), Variable(scale).cuda()
         quantization = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
-        quantise = torch.from_numpy(quantization(scale.numpy())).squeeze_(1).cuda()
+        quantise = torch.from_numpy(quantization(scale.cpu().numpy())).squeeze_(1).cuda()
 
         quant_list = generate_quantise(quantise)
+        scale_list = generate_scales(quant_list, receptive_fields, scale)
         #scale = Variable(scale).cuda()
         sideOuts = nnet(image)
         
