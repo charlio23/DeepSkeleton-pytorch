@@ -146,10 +146,11 @@ for epoch in range(epochs):
         sideOuts = nnet(image)
         
         loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
+
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
+
         loss.backward()
-        print(loss)
         #lossAvg = loss/train_size
         #lossAvg.backward()
         lossAcc += loss.item()
