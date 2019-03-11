@@ -253,6 +253,9 @@ class LMSDS(torch.nn.Module):
         self.sideOutScale4 = torch.nn.Conv2d(in_channels=512, out_channels=1,
             kernel_size=1, stride=1, padding=0)
 
+        self.sideOutScale5 = torch.nn.Conv2d(in_channels=512, out_channels=1,
+            kernel_size=1, stride=1, padding=0)
+
         self.fuseScale0 = torch.nn.Conv2d(in_channels=4, out_channels=1,
             kernel_size=1, stride=1, padding=0, bias=False)
 
