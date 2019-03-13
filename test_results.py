@@ -26,7 +26,7 @@ os.makedirs(testOutput, exist_ok=True)
 
 print("Loading trained network...")
 
-networkPath = "LMSDS.pth"
+networkPath = "FSDS.pth"
 
 nnet = LMSDS().cuda()
 dic = torch.load(networkPath)

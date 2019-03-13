@@ -46,7 +46,7 @@ initializationFusionWeights = 1/5
 weightDecay = 0.0002
 receptive_fields = np.array([14,40,92,196])
 p = 1.2
-L = 0.5
+L = 10
 ###
 
 # Optimizer settings.
@@ -168,8 +168,8 @@ for epoch in range(epochs):
         quantise_SO = sideOuts[0:5]
         scale_SO = sideOuts[5:-1]
         loss_quant = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(quantise_SO,quant_list)])
-        #loss_scale = sum([regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])])
-        #loss = loss_quant + L*loss_scale
+        loss_scale = sum([regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])])
+        loss = loss_quant + L*loss_scale
         
         loss = loss_quant
 
@@ -194,18 +194,18 @@ for epoch in range(epochs):
         i += 1
 
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
-    plt.savefig("images/sample_0.png")
+    plt.savefig("images/sampleLMSDS_0.png")
 
     # transform to grayscale images
 
     for k in range(0,5):
-        grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save('images/sample_' + str(k+1) + '.png')
-    grayTrans((quantise > 0.5)).save('images/sample_T.png')
+        grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save('images/sampleLMSDS_' + str(k+1) + '.png')
+    grayTrans((quantise > 0.5)).save('images/sampleLMSDS_T.png')
 
-    torch.save(nnet.state_dict(), 'FSDS.pth')
+    torch.save(nnet.state_dict(), 'LMSDS.pth')
     plt.clf()
     plt.plot(epoch_line,loss_line)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.savefig("images/loss.png")
+    plt.savefig("images/lossLMSDS.png")
     plt.clf()
