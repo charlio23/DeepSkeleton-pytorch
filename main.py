@@ -111,10 +111,12 @@ def balanced_cross_entropy(input, target):
     weight_total = sum(weights)
     weights = (torch.tensor(weights).float()/weight_total).cuda()
     #CE loss
-    loss = cross_entropy(input,target,weight=weights,reduction='none')
+    loss = cross_entropy(input,target,weight=weights,reduction='sum')
     batch = target.shape[0]
-
-    return torch.sum(loss)/batch
+    height = input.size(2)
+    width = input.size(3)
+    numel = batch*height*width
+    return loss/(numel)
 
 def regressor_loss(input, targetScale, targetQuant):
     weight = (targetQuant > 0.01).unsqueeze_(1).float()
@@ -166,8 +168,11 @@ for epoch in range(epochs):
         quantise_SO = sideOuts[0:5]
         scale_SO = sideOuts[5:-1]
         loss_quant = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(quantise_SO,quant_list)])
-        loss_scale = sum([regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])])
-        loss = loss_quant + L*loss_scale
+        #loss_scale = sum([regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])])
+        #loss = loss_quant + L*loss_scale
+        
+        loss = loss_quant
+        
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
@@ -195,10 +200,10 @@ for epoch in range(epochs):
     # transform to grayscale images
 
     for k in range(0,5):
-        grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save('images/sampleLMSDS_' + str(k+1) + '.png')
-    grayTrans((quantise > 0.5)).save('images/sampleLMSDS_T.png')
+        grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save('images/sample_' + str(k+1) + '.png')
+    grayTrans((quantise > 0.5)).save('images/sample_T.png')
 
-    torch.save(nnet.state_dict(), 'LMSDS.pth')
+    torch.save(nnet.state_dict(), 'FSDS.pth')
     plt.clf()
     plt.plot(epoch_line,loss_line)
     plt.xlabel("Epoch")
