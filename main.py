@@ -113,10 +113,10 @@ def balanced_cross_entropy(input, target):
     #CE loss
     loss = cross_entropy(input,target,weight=weights,reduction='sum')
     batch = target.shape[0]
-    height = input.size(2)
-    width = input.size(3)
-    numel = batch*height*width
-    return loss/(numel)
+    #height = input.size(2)
+    #width = input.size(3)
+    #numel = batch*height*width
+    return loss/batch
 
 def regressor_loss(input, targetScale, targetQuant):
     weight = (targetQuant > 0.01).unsqueeze_(1).float()
