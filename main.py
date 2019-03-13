@@ -172,19 +172,18 @@ for epoch in range(epochs):
         #loss = loss_quant + L*loss_scale
         
         loss = loss_quant
-        
+
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
-        loss.backward()
-        #lossAvg = loss/train_size
-        #lossAvg.backward()
+        lossAvg = loss/train_size
+        lossAvg.backward()
         lossAcc += loss.item()
 
-        #if j % train_size == 0:
-        optimizer.step()
-        optimizer.zero_grad()
-        lr_schd.step()
+        if j % train_size == 0:
+            optimizer.step()
+            optimizer.zero_grad()
+            lr_schd.step()
         if (i+1) % dispInterval == 0:
             timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             lossDisp = lossAcc/dispInterval
@@ -208,5 +207,5 @@ for epoch in range(epochs):
     plt.plot(epoch_line,loss_line)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.savefig("images/lossLMDSD.png")
+    plt.savefig("images/loss.png")
     plt.clf()
