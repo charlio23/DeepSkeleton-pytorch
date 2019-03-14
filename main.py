@@ -173,7 +173,7 @@ for epoch in range(epochs):
         loss = loss_quant + L*loss_scale
         
         #loss = loss_quant
-        print(loss)
+
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
