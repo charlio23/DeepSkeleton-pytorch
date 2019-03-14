@@ -145,7 +145,7 @@ print("Training started")
 
 epochs = 40
 i = 0
-dispInterval = 10
+dispInterval = 1000
 lossAcc = [0.0,0.0,0.0,0.0,0.0,0.0]
 train_size = 10
 epoch_line = []
