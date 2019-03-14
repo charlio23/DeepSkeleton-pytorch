@@ -171,19 +171,21 @@ for epoch in range(epochs):
         loss_scale = sum([regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])])
         loss = loss_quant + L*loss_scale
         
-        loss = loss_quant
+        #loss = loss_quant
 
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
-        lossAvg = loss/train_size
-        lossAvg.backward()
-        lossAcc += loss.item()
+        loss.backward()
+        #lossAvg = loss/train_size
+        #lossAvg.backward()
+        #lossAcc += loss.item()
 
-        if j % train_size == 0:
-            optimizer.step()
-            optimizer.zero_grad()
-            lr_schd.step()
+       # if j % train_size == 0:
+        optimizer.step()
+        optimizer.zero_grad()
+        lr_schd.step()
+        
         if (i+1) % dispInterval == 0:
             timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             lossDisp = lossAcc/dispInterval

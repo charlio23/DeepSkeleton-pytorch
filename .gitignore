@@ -9,6 +9,7 @@ __pycache__
 *.ipynb
 *.py36pickle
 im
+images-demo
 data
 output
 *.pt
