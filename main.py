@@ -165,28 +165,28 @@ for epoch in range(epochs):
         quant_list = generate_quantise(quantise)
         #scale_list = generate_scales(quant_list, receptive_fields, scale)
         sideOuts = nnet(image)
-        quantise_SO = sideOuts[0:5]
+        #quantise_SO = sideOuts[0:5]
         #scale_SO = sideOuts[5:]
-        loss_quant = [balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(quantise_SO,quant_list)]
+        loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
         #loss_scale = sum([regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])])
 
         #loss = loss_quant + L*loss_scale
         
-        loss = sum(loss_quant)
-
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
         loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+        lr_schd.step()
+        loss_quant = [balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)]
         #lossAvg = loss/train_size
         #lossAvg.backward()
         for k in range(0,5):
             lossAcc[k] += loss_quant[k].item()
         lossAcc[5] += loss.item()
        # if j % train_size == 0:
-        optimizer.step()
-        optimizer.zero_grad()
-        lr_schd.step()
+
         
         if (i+1) % dispInterval == 0:
             timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
@@ -225,3 +225,4 @@ for epoch in range(epochs):
     plt.xlabel("Epoch")
     plt.ylabel("Loss Total")
     plt.savefig("images/loss_Total.png")
+    plt.clf()
