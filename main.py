@@ -46,7 +46,7 @@ initializationFusionWeights = 1/5
 weightDecay = 0.0002
 receptive_fields = np.array([14,40,92,196])
 p = 1.2
-L = 10
+L = 1000
 ###
 
 # Optimizer settings.
@@ -169,6 +169,8 @@ for epoch in range(epochs):
         scale_SO = sideOuts[5:-1]
         loss_quant = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(quantise_SO,quant_list)])
         loss_scale = sum([regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])])
+        print(loss_quant)
+        print(loss_scale)
         loss = loss_quant + L*loss_scale
         
         #loss = loss_quant
