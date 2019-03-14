@@ -173,14 +173,14 @@ for epoch in range(epochs):
         loss = loss_quant + L*loss_scale
         
         #loss = loss_quant
-
+        print(loss)
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
         loss.backward()
         #lossAvg = loss/train_size
         #lossAvg.backward()
-        #lossAcc += loss.item()
+        lossAcc += loss.item()
 
        # if j % train_size == 0:
         optimizer.step()
