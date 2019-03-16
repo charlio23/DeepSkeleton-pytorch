@@ -174,10 +174,9 @@ for epoch in range(epochs):
         
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
-
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        optimizer.zero_grad()
         lr_schd.step()
         loss_quant = [balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)]
         #lossAvg = loss/train_size
