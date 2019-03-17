@@ -128,7 +128,7 @@ dispInterval = 50
 lossAcc = [0.0]*6
 train_size = 10
 epoch_line = []
-loss_line = [[]]*6
+loss_line = [[], [], [], [], [], []]
 print(loss_line)
 nnet.train()
 optimizer.zero_grad()
