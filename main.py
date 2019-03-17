@@ -177,7 +177,7 @@ for epoch in range(epochs):
                     print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
         i += 1
 
-        if (i+1)*2 % dispInterval == 0:
+        if (i+1) % (dispInterval*2) == 0:
             break 
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
     plt.savefig("images/sample_0.png")
