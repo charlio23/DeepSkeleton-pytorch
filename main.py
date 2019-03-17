@@ -147,15 +147,16 @@ for epoch in range(epochs):
         
         loss_list = [balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)]
 
+        loss = sum(loss_list)
+
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
-        loss = sum(loss_list)
         loss.backward()
         #lossAvg = loss/train_size
         #lossAvg.backward()
         for l in range(0,5):
-            lossAcc[l] += loss_list[l]
+            lossAcc[l] += loss_list[l].item()
         lossAcc[5] += loss.item()
         optimizer.step()
         optimizer.zero_grad()
@@ -163,6 +164,10 @@ for epoch in range(epochs):
         #if j % train_size == 0:
         
         if (i+1) % dispInterval == 0:
+            print(lossAcc)
+            print(loss)
+            print(loss_list)
+            print(loss_line)
             timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             epoch_line.append(epoch + j/len(train))
             for l in range(0,5):
