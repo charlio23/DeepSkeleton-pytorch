@@ -129,7 +129,6 @@ lossAcc = [0.0]*6
 train_size = 10
 epoch_line = []
 loss_line = [[], [], [], [], [], []]
-print(loss_line)
 nnet.train()
 optimizer.zero_grad()
 soft = torch.nn.Softmax(dim=1)
@@ -153,6 +152,7 @@ for epoch in range(epochs):
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         lr_schd.step()
@@ -161,7 +161,7 @@ for epoch in range(epochs):
         for l in range(0,5):
             lossAcc[l] += loss_list[l].clone().item()
         lossAcc[5] += loss.clone().item()
-        optimizer.zero_grad()
+        
 
         #if j % train_size == 0:
         
@@ -176,7 +176,9 @@ for epoch in range(epochs):
                 if l == 5:
                     print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
         i += 1
-
+        if i == 1000:
+            break
+            i = 0
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
     plt.savefig("images/sample_0.png")
 
