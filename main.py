@@ -124,7 +124,7 @@ print("Training started")
 
 epochs = 40
 i = 0
-dispInterval = 50
+dispInterval = 1e5
 lossAcc = [0.0]*6
 train_size = 10
 epoch_line = []
@@ -171,16 +171,10 @@ for epoch in range(epochs):
             for l in range(0,6):
                 lossDisp = lossAcc[l]/dispInterval
                 loss_line[l].append(lossDisp)
-                print(loss_line[l])
                 lossAcc[l] = 0.0
                 if l == 5:
                     print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
-            print(loss_line)
-            print(epoch_line)
         i += 1
-        if i == 500:
-            i = 0
-            break
 
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
     plt.savefig("images/sample_0.png")
