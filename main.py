@@ -175,10 +175,10 @@ for epoch in range(epochs):
                 lossAcc[l] = 0.0
                 if l == 5:
                     print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
-        i += 1
-        if i == 1000:
+            i += 1
             break
-            i = 0
+        i += 1
+            
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
     plt.savefig("images/sample_0.png")
 
