@@ -129,6 +129,7 @@ lossAcc = [0.0]*6
 train_size = 10
 epoch_line = []
 loss_line = [[]]*6
+print(loss_line)
 nnet.train()
 optimizer.zero_grad()
 soft = torch.nn.Softmax(dim=1)
@@ -173,6 +174,8 @@ for epoch in range(epochs):
                 lossAcc[l] = 0.0
                 if l == 5:
                     print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
+            print(loss_line)
+            print(epoch_line)
         i += 1
         if i == 500:
             i = 0
