@@ -154,14 +154,15 @@ for epoch in range(epochs):
             raise ValueError('loss is nan while training')
 
         loss.backward()
+        optimizer.step()
+        lr_schd.step()
         #lossAvg = loss/train_size
         #lossAvg.backward()
         for l in range(0,5):
-            lossAcc[l] += loss_list[l].item()
-        lossAcc[5] += loss.item()
-        optimizer.step()
+            lossAcc[l] += loss_list[l].clone().item()
+        lossAcc[5] += loss.clone().item()
         optimizer.zero_grad()
-        lr_schd.step()
+
         #if j % train_size == 0:
         
         if (i+1) % dispInterval == 0:
