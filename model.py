@@ -1,186 +1,332 @@
-from dataset import SKLARGE
-from model import initialize_fsds
-from torch.utils.data import DataLoader, ConcatDataset
-import torchvision.transforms as transforms
-import torch
-import matplotlib.pyplot as plt
-import numpy as np
-import torch.optim as optim
-from PIL import Image
+import torch 
+from torch.nn.functional import interpolate
 from torch import sigmoid
-from torch.nn.functional import cross_entropy
-from torch.autograd import Variable
-import time
-from itertools import chain
-from tqdm import tqdm
-from torch.optim import lr_scheduler
-from collections import defaultdict
 
-def grayTrans(img):
-    img = img.data.cpu().numpy()[0]*255.0
-    img = (img).astype(np.uint8)
-    img = Image.fromarray(img, 'L')
-    return img
-
-print("Importing datasets...")
-
-rootDir = "SK-LARGE/"
-trainListPath = "SK-LARGE/aug_data/train_pair.lst"
-
-trainDS = SKLARGE(rootDir, trainListPath)
-train = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=4)
-
-print("Initializing network...")
-
-modelPath = "model/vgg16.pth"
-nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
-
-print("Defining hyperparameters...")
-
-### HYPER-PARAMETERS
-learningRate = 1e-6
-momentum = 0.9
-lossWeight = 1
-initializationNestedFilters = 0
-initializationFusionWeights = 1/5
-weightDecay = 0.0002
-receptive_fields = np.array([14,40,92,196])
-p = 1.2
-###
-
-# Optimizer settings.
-net_parameters_id = defaultdict(list)
-for name, param in nnet.named_parameters():
-    if name in ['module.conv1.0.weight', 'module.conv1.2.weight',
-                'module.conv2.1.weight', 'module.conv2.3.weight',
-                'module.conv3.1.weight', 'module.conv3.3.weight', 'module.conv3.5.weight',
-                'module.conv4.1.weight', 'module.conv4.3.weight', 'module.conv4.5.weight']:
-        print('{:26} lr:    1 decay:1'.format(name)); net_parameters_id['conv1-4.weight'].append(param)
-    elif name in ['module.conv1.0.bias', 'module.conv1.2.bias',
-                'module.conv2.1.bias', 'module.conv2.3.bias',
-                'module.conv3.1.bias', 'module.conv3.3.bias', 'module.conv3.5.bias',
-                'module.conv4.1.bias', 'module.conv4.3.bias', 'module.conv4.5.bias']:
-        print('{:26} lr:    2 decay:0'.format(name)); net_parameters_id['conv1-4.bias'].append(param)
-    elif name in ['module.conv5.1.weight', 'module.conv5.3.weight', 'module.conv5.5.weight']:
-        print('{:26} lr:  100 decay:1'.format(name)); net_parameters_id['conv5.weight'].append(param)
-    elif name in ['module.conv5.1.bias', 'module.conv5.3.bias', 'module.conv5.5.bias']:
-        print('{:26} lr:  200 decay:0'.format(name)); net_parameters_id['conv5.bias'].append(param)
-    elif name in ['module.sideOut1.weight', 'module.sideOut2.weight',
-                  'module.sideOut3.weight', 'module.sideOut4.weight', 'module.sideOut5.weight']:
-        print('{:26} lr: 0.01 decay:1'.format(name)); net_parameters_id['score_dsn_1-5.weight'].append(param)
-    elif name in ['module.sideOut1.bias', 'module.sideOut2.bias',
-                  'module.sideOut3.bias', 'module.sideOut4.bias', 'module.sideOut5.bias']:
-        print('{:26} lr: 0.02 decay:0'.format(name)); net_parameters_id['score_dsn_1-5.bias'].append(param)
-    elif name in ['module.fuseScale0.weight', 'module.fuseScale1.weight',
-                  'module.fuseScale2.weight', 'module.fuseScale3.weight']:
-        print('{:26} lr:0.001 decay:1'.format(name)); net_parameters_id['score_final.weight'].append(param)
-    elif name in ['module.fuseScale0.bias', 'module.fuseScale1.bias',
-                  'module.fuseScale2.bias', 'module.fuseScale3.bias']:
-        print('{:26} lr:0.002 decay:0'.format(name)); net_parameters_id['score_final.bias'].append(param)
-
-# IMPORTANT: In the official implementation paper, they specify that the lr is 5 times the base learning rate, contrary to their caffe code version
-
-# Create optimizer.
-optimizer = torch.optim.SGD([
-    {'params': net_parameters_id['conv1-4.weight']      , 'lr': learningRate*1    , 'weight_decay': weightDecay},
-    {'params': net_parameters_id['conv1-4.bias']        , 'lr': learningRate*2    , 'weight_decay': 0.},
-    {'params': net_parameters_id['conv5.weight']        , 'lr': learningRate*100  , 'weight_decay': weightDecay},
-    {'params': net_parameters_id['conv5.bias']          , 'lr': learningRate*200  , 'weight_decay': 0.},
-    {'params': net_parameters_id['score_dsn_1-5.weight'], 'lr': learningRate*1 , 'weight_decay': weightDecay},
-    {'params': net_parameters_id['score_dsn_1-5.bias']  , 'lr': learningRate*2 , 'weight_decay': 0.},
-    {'params': net_parameters_id['score_final.weight']  , 'lr': learningRate*5, 'weight_decay': weightDecay},
-    {'params': net_parameters_id['score_final.bias']    , 'lr': learningRate*10, 'weight_decay': 0.},
-], lr=learningRate, momentum=momentum, weight_decay=weightDecay)
-
-# Learning rate scheduler.
-lr_schd = lr_scheduler.StepLR(optimizer, step_size=2e5, gamma=0.1)
-
-def balanced_cross_entropy(input, target):
-    #weights
-    weights = []
-    for i in range(0,input.size(1)):
-        w = torch.sum(target == i).item()
-        if w < 1e-7:
-            weights.append(0)
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv2d') != -1:
+        if m.in_channels < 5:
+            n = float(m.in_channels)
+            torch.nn.init.constant_(m.weight.data,1/n)
         else:
-            weights.append(1.0/w)
-    weight_total = sum(weights)
-    weights = (torch.tensor(weights).float()/weight_total).cuda()
-    #CE loss
-    loss = cross_entropy(input,target,weight=weights,reduction='none')
-    batch = target.shape[0]
+            torch.nn.init.constant_(m.weight.data,0)
+        if m.bias is not None:
+            torch.nn.init.constant_(m.bias.data,0)
 
-    return torch.sum(loss)/batch
+def load_vgg16(net, path):
+    vgg16_items = list(torch.load(path).items())
+    net.apply(weights_init)
+    j = 0
+    for k, v in net.state_dict().items():
+        if k.find("conv") != -1:
+            net.state_dict()[k].copy_(vgg16_items[j][1])
+            j += 1
+    return net
 
-def generate_quantise(quantise):
-    result = []
-    for i in range(1,5):
-        result.append(quantise*(quantise <= i).long())
+def initialize_fsds(path):
+    net = FSDS()
+    return load_vgg16(net,path)
 
-    result.append(quantise)
-    return result
+def initialize_lmsds(path):
+    net = LMSDS()
+    return load_vgg16(net,path)
 
-print("Training started")
+class FSDS(torch.nn.Module):
+    def __init__(self):
+        super(FSDS, self).__init__()
 
-epochs = 40
-i = 0
-dispInterval = 500
-lossAcc = 0.0
-train_size = 10
-epoch_line = []
-loss_line = []
-nnet.train()
-optimizer.zero_grad()
-soft = torch.nn.Softmax(dim=1)
+        self.conv1 = torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False)
+        )
 
-for epoch in range(epochs):
-    print("Epoch: " + str(epoch + 1))
-    for j, data in enumerate(tqdm(train), 1):
-        image, scale = data
-        image = Variable(image).cuda()
-        quantization = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
-        quantise = torch.from_numpy(quantization(scale.numpy())).squeeze_(1).cuda()
+        self.conv2 = torch.nn.Sequential(
+            torch.nn.MaxPool2d(kernel_size=2, stride=2),
+            torch.nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False)
+        )
 
-        quant_list = generate_quantise(quantise)
-        #scale = Variable(scale).cuda()
-        sideOuts = nnet(image)
+        self.conv3 = torch.nn.Sequential(
+            torch.nn.MaxPool2d(kernel_size=2, stride=2),
+            torch.nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False)
+        )
+
+        self.conv4 = torch.nn.Sequential(
+            torch.nn.MaxPool2d(kernel_size=2, stride=2),
+            torch.nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False)
+        )
+
+        self.conv5 = torch.nn.Sequential(
+            torch.nn.MaxPool2d(kernel_size=2, stride=2),
+            torch.nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False)
+        )
+
+        self.sideOut2 = torch.nn.Conv2d(in_channels=128, out_channels=2,
+            kernel_size=1, stride=1, padding=0)
+
+        self.sideOut3 = torch.nn.Conv2d(in_channels=256, out_channels=3,
+            kernel_size=1, stride=1, padding=0)
+
+        self.sideOut4 = torch.nn.Conv2d(in_channels=512, out_channels=4,
+            kernel_size=1, stride=1, padding=0)
+
+        self.sideOut5 = torch.nn.Conv2d(in_channels=512, out_channels=5,
+            kernel_size=1, stride=1, padding=0)
+
+        self.fuseScale0 = torch.nn.Conv2d(in_channels=4, out_channels=1,
+            kernel_size=1, stride=1, padding=0, bias=False)
+
+        self.fuseScale1 = torch.nn.Conv2d(in_channels=4, out_channels=1,
+            kernel_size=1, stride=1, padding=0, bias=False)
+
+        self.fuseScale2 = torch.nn.Conv2d(in_channels=3, out_channels=1,
+            kernel_size=1, stride=1, padding=0, bias=False)
+
+        self.fuseScale3 = torch.nn.Conv2d(in_channels=2, out_channels=1,
+            kernel_size=1, stride=1, padding=0, bias=False)
+
+        with torch.no_grad():
+            self.fuseScale0.weight.div_(torch.norm(self.fuseScale0.weight, dim=1, keepdim=True))
+            self.fuseScale1.weight.div_(torch.norm(self.fuseScale1.weight, dim=1, keepdim=True))
+            self.fuseScale2.weight.div_(torch.norm(self.fuseScale2.weight, dim=1, keepdim=True))
+            self.fuseScale3.weight.div_(torch.norm(self.fuseScale3.weight, dim=1, keepdim=True))
         
-        loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
+        self.softmax = torch.nn.Softmax(dim=1)
+        
+    def forward(self, image):
 
-        if np.isnan(float(loss.item())):
-            raise ValueError('loss is nan while training')
+        tensorBlue = (image[:, 0:1, :, :] * 255.0) - 104.00698793
+        tensorGreen = (image[:, 1:2, :, :] * 255.0) - 116.66876762
+        tensorRed = (image[:, 2:3, :, :] * 255.0) - 122.67891434
 
-        loss.backward()
-        #lossAvg = loss/train_size
-        #lossAvg.backward()
-        lossAcc += loss.item()
+        image = torch.cat([ tensorBlue, tensorGreen, tensorRed ], 1)
 
-        #if j % train_size == 0:
-        optimizer.step()
-        optimizer.zero_grad()
-        lr_schd.step()
-        if (i+1) % dispInterval == 0:
-            timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-            lossDisp = lossAcc/dispInterval
-            epoch_line.append(epoch + j/len(train))
-            loss_line.append(lossDisp)
-            print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
-            lossAcc = 0.0
-        i += 1
+        conv1 = self.conv1(image)
+        conv2 = self.conv2(conv1)
+        conv3 = self.conv3(conv2)
+        conv4 = self.conv4(conv3)
+        conv5 = self.conv5(conv4)
 
-    plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
-    plt.savefig("images/sample_0.png")
+        height = image.size(2)
+        width = image.size(3)
+        
+        sideOut2 = interpolate(self.sideOut2(conv2), size=(height,width), mode='bilinear', align_corners=False)
+        sideOut3 = interpolate(self.sideOut3(conv3), size=(height,width), mode='bilinear', align_corners=False)
+        sideOut4 = interpolate(self.sideOut4(conv4), size=(height,width), mode='bilinear', align_corners=False)
+        sideOut5 = interpolate(self.sideOut5(conv5), size=(height,width), mode='bilinear', align_corners=False)
 
-    # transform to grayscale images
+        softSideOut2 = self.softmax(sideOut2)
+        softSideOut3 = self.softmax(sideOut3)
+        softSideOut4 = self.softmax(sideOut4)
+        softSideOut5 = self.softmax(sideOut5)
 
-    for k in range(0,5):
-        grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save('images/sample_' + str(k+1) + '.png')
-    grayTrans((quantise > 0.5)).save('images/sample_T.png')
+        fuse0 = torch.cat((softSideOut2[:,0:1,:,:], softSideOut3[:,0:1,:,:], softSideOut4[:,0:1,:,:], softSideOut5[:,0:1,:,:] ),1)
+        fuse1 = torch.cat((softSideOut2[:,1:2,:,:], softSideOut3[:,1:2,:,:], softSideOut4[:,1:2,:,:], softSideOut5[:,1:2,:,:] ),1)
+        fuse2 = torch.cat((softSideOut3[:,2:3,:,:], softSideOut4[:,2:3,:,:], softSideOut5[:,2:3,:,:] ),1)
+        fuse3 = torch.cat((softSideOut4[:,3:4,:,:], softSideOut5[:,3:4,:,:] ),1)
+        fuse4 = softSideOut5[:,4:5,:,:]
+        
+        fuse0 = self.fuseScale0(fuse0)
+        fuse1 = self.fuseScale1(fuse1)
+        fuse2 = self.fuseScale2(fuse2)
+        fuse3 = self.fuseScale3(fuse3)
+        
+        fuse = torch.cat((fuse0,fuse1,fuse2,fuse3,fuse4),1)
+        
+        #we do not ouptut softmax funtions as they are calculated with the cross entropy loss
 
-    torch.save(nnet.state_dict(), 'FSDS.pth')
-    plt.clf()
-    plt.plot(epoch_line,loss_line)
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.savefig("images/loss.png")
-    plt.clf()
+        return sideOut2, sideOut3, sideOut4, sideOut5, fuse
+
+
+class LMSDS(torch.nn.Module):
+    def __init__(self):
+        super(LMSDS, self).__init__()
+
+        self.conv1 = torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False)
+        )
+
+        self.conv2 = torch.nn.Sequential(
+            torch.nn.MaxPool2d(kernel_size=2, stride=2),
+            torch.nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False)
+        )
+
+        self.conv3 = torch.nn.Sequential(
+            torch.nn.MaxPool2d(kernel_size=2, stride=2),
+            torch.nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False)
+        )
+
+        self.conv4 = torch.nn.Sequential(
+            torch.nn.MaxPool2d(kernel_size=2, stride=2),
+            torch.nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False)
+        )
+
+        self.conv5 = torch.nn.Sequential(
+            torch.nn.MaxPool2d(kernel_size=2, stride=2),
+            torch.nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3,
+                stride=1, padding=1),
+            torch.nn.ReLU(inplace=False)
+        )
+
+        self.sideOutLoc2 = torch.nn.Conv2d(in_channels=128, out_channels=2,
+            kernel_size=1, stride=1, padding=0)
+
+        self.sideOutLoc3 = torch.nn.Conv2d(in_channels=256, out_channels=3,
+            kernel_size=1, stride=1, padding=0)
+
+        self.sideOutLoc4 = torch.nn.Conv2d(in_channels=512, out_channels=4,
+            kernel_size=1, stride=1, padding=0)
+
+        self.sideOutLoc5 = torch.nn.Conv2d(in_channels=512, out_channels=5,
+            kernel_size=1, stride=1, padding=0)
+
+        self.sideOutScale2 = torch.nn.Conv2d(in_channels=128, out_channels=1,
+            kernel_size=1, stride=1, padding=0)
+
+        self.sideOutScale3 = torch.nn.Conv2d(in_channels=256, out_channels=1,
+            kernel_size=1, stride=1, padding=0)
+
+        self.sideOutScale4 = torch.nn.Conv2d(in_channels=512, out_channels=1,
+            kernel_size=1, stride=1, padding=0)
+
+        self.sideOutScale5 = torch.nn.Conv2d(in_channels=512, out_channels=1,
+            kernel_size=1, stride=1, padding=0)
+
+        self.fuseScale0 = torch.nn.Conv2d(in_channels=4, out_channels=1,
+            kernel_size=1, stride=1, padding=0, bias=False)
+
+        self.fuseScale1 = torch.nn.Conv2d(in_channels=4, out_channels=1,
+            kernel_size=1, stride=1, padding=0, bias=False)
+
+        self.fuseScale2 = torch.nn.Conv2d(in_channels=3, out_channels=1,
+            kernel_size=1, stride=1, padding=0, bias=False)
+
+        self.fuseScale3 = torch.nn.Conv2d(in_channels=2, out_channels=1,
+            kernel_size=1, stride=1, padding=0, bias=False)
+
+        with torch.no_grad():
+
+            self.fuseScale0.weight.div_(torch.norm(self.fuseScale0.weight, dim=1, keepdim=True))
+            self.fuseScale1.weight.div_(torch.norm(self.fuseScale1.weight, dim=1, keepdim=True))
+            self.fuseScale2.weight.div_(torch.norm(self.fuseScale2.weight, dim=1, keepdim=True))
+            self.fuseScale3.weight.div_(torch.norm(self.fuseScale3.weight, dim=1, keepdim=True))
+        
+        self.softmax = torch.nn.Softmax(dim=1)
+        
+    def forward(self, image):
+
+        tensorBlue = (image[:, 0:1, :, :] * 255.0) - 104.00698793
+        tensorGreen = (image[:, 1:2, :, :] * 255.0) - 116.66876762
+        tensorRed = (image[:, 2:3, :, :] * 255.0) - 122.67891434
+
+        image = torch.cat([ tensorBlue, tensorGreen, tensorRed ], 1)
+
+        conv1 = self.conv1(image)
+        conv2 = self.conv2(conv1)
+        conv3 = self.conv3(conv2)
+        conv4 = self.conv4(conv3)
+        conv5 = self.conv5(conv4)
+
+        height = image.size(2)
+        width = image.size(3)
+        
+        sideOutLoc2 = interpolate(self.sideOutLoc2(conv2), size=(height,width), mode='bilinear', align_corners=False)
+        sideOutLoc3 = interpolate(self.sideOutLoc3(conv3), size=(height,width), mode='bilinear', align_corners=False)
+        sideOutLoc4 = interpolate(self.sideOutLoc4(conv4), size=(height,width), mode='bilinear', align_corners=False)
+        sideOutLoc5 = interpolate(self.sideOutLoc5(conv5), size=(height,width), mode='bilinear', align_corners=False)
+
+        softSideOut2 = self.softmax(sideOutLoc2)
+        softSideOut3 = self.softmax(sideOutLoc3)
+        softSideOut4 = self.softmax(sideOutLoc4)
+        softSideOut5 = self.softmax(sideOutLoc5)
+
+        fuse0 = torch.cat((softSideOut2[:,0:1,:,:], softSideOut3[:,0:1,:,:], softSideOut4[:,0:1,:,:], softSideOut5[:,0:1,:,:] ),1)
+        fuse1 = torch.cat((softSideOut2[:,1:2,:,:], softSideOut3[:,1:2,:,:], softSideOut4[:,1:2,:,:], softSideOut5[:,1:2,:,:] ),1)
+        fuse2 = torch.cat((softSideOut3[:,2:3,:,:], softSideOut4[:,2:3,:,:], softSideOut5[:,2:3,:,:] ),1)
+        fuse3 = torch.cat((softSideOut4[:,3:4,:,:], softSideOut5[:,3:4,:,:] ),1)
+        fuse4 = softSideOut5[:,4:5,:,:]
+        
+        fuse0 = self.fuseScale0(fuse0)
+        fuse1 = self.fuseScale1(fuse1)
+        fuse2 = self.fuseScale2(fuse2)
+        fuse3 = self.fuseScale3(fuse3)
+        
+        fuse = torch.cat((fuse0,fuse1,fuse2,fuse3,fuse4),1)
+        
+        sideOutScale2 = interpolate(self.sideOutScale2(conv2), size=(height,width), mode='bilinear', align_corners=False)
+        sideOutScale3 = interpolate(self.sideOutScale3(conv3), size=(height,width), mode='bilinear', align_corners=False)
+        sideOutScale4 = interpolate(self.sideOutScale4(conv4), size=(height,width), mode='bilinear', align_corners=False)
+        sideOutScale5 = interpolate(self.sideOutScale5(conv5), size=(height,width), mode='bilinear', align_corners=False)
+
+        sideOutScale2 = sigmoid(sideOutScale2)
+        sideOutScale3 = sigmoid(sideOutScale3)
+        sideOutScale4 = sigmoid(sideOutScale4)
+        sideOutScale5 = sigmoid(sideOutScale5)
+
+        #we do not ouptut softmax funtions as they are calculated with the cross entropy loss
+
+        return sideOutLoc2, sideOutLoc3, sideOutLoc4, sideOutLoc5, fuse, sideOutScale2, sideOutScale3, sideOutScale4, sideOutScale5
