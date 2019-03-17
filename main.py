@@ -171,6 +171,7 @@ for epoch in range(epochs):
             for l in range(0,6):
                 lossDisp = lossAcc[l]/dispInterval
                 loss_line[l].append(lossDisp)
+                print(loss_line[l])
                 lossAcc[l] = 0.0
                 if l == 5:
                     print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
