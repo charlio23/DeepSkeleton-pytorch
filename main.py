@@ -125,10 +125,10 @@ print("Training started")
 epochs = 40
 i = 0
 dispInterval = 500
-lossAcc = 0.0
+lossAcc = [0.0]*6
 train_size = 10
 epoch_line = []
-loss_line = []
+loss_line = [[]]*6
 nnet.train()
 optimizer.zero_grad()
 soft = torch.nn.Softmax(dim=1)
@@ -145,27 +145,34 @@ for epoch in range(epochs):
         #scale = Variable(scale).cuda()
         sideOuts = nnet(image)
         
-        loss = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
+        loss_list = [balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)]
 
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
+        loss = sum(loss_list)
         loss.backward()
         #lossAvg = loss/train_size
         #lossAvg.backward()
-        lossAcc += loss.item()
-
-        #if j % train_size == 0:
+        for l in range(0,5):
+            lossAcc[l] += loss_list[l]
+        lossAcc[5] += loss.item()
         optimizer.step()
         optimizer.zero_grad()
         lr_schd.step()
+        #if j % train_size == 0:
+        
         if (i+1) % dispInterval == 0:
             timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-            lossDisp = lossAcc/dispInterval
             epoch_line.append(epoch + j/len(train))
-            loss_line.append(lossDisp)
+            for l in range(0,5):
+                lossDisp = lossAcc[l]/dispInterval
+                loss_line[l].append(lossDisp)
+                lossAcc[l] = 0.0
+            lossDisp = lossAcc[5]/dispInterval
+            loss_line[5].append(lossDisp)
             print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
-            lossAcc = 0.0
+            lossAcc[5] = 0.0
         i += 1
 
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
@@ -179,8 +186,19 @@ for epoch in range(epochs):
 
     torch.save(nnet.state_dict(), 'FSDS.pth')
     plt.clf()
-    plt.plot(epoch_line,loss_line)
+    for l in range(0,4):
+        plt.plot(epoch_line,loss_line[l])
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss SO " + str(l+2))
+        plt.savefig("images/loss_SO_" + str(l+2) + ".png")
+        plt.clf()
+    plt.plot(epoch_line,loss_line[4])
     plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.savefig("images/loss.png")
+    plt.ylabel("Loss Fuse")
+    plt.savefig("images/loss_Fuse" + str(l+2) + ".png")
+    plt.clf()
+    plt.plot(epoch_line,loss_line[5])
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss Total")
+    plt.savefig("images/loss_Total.png")
     plt.clf()
