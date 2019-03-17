@@ -124,7 +124,7 @@ print("Training started")
 
 epochs = 40
 i = 0
-dispInterval = 500
+dispInterval = 50
 lossAcc = [0.0]*6
 train_size = 10
 epoch_line = []
@@ -164,21 +164,19 @@ for epoch in range(epochs):
         #if j % train_size == 0:
         
         if (i+1) % dispInterval == 0:
-            print(lossAcc)
-            print(loss)
-            print(loss_list)
-            print(loss_line)
+
             timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             epoch_line.append(epoch + j/len(train))
-            for l in range(0,5):
+            for l in range(0,6):
                 lossDisp = lossAcc[l]/dispInterval
                 loss_line[l].append(lossDisp)
                 lossAcc[l] = 0.0
-            lossDisp = lossAcc[5]/dispInterval
-            loss_line[5].append(lossDisp)
-            print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
-            lossAcc[5] = 0.0
+                if l == 5:
+                    print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
         i += 1
+        if i == 500:
+            i = 0
+            break
 
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
     plt.savefig("images/sample_0.png")
@@ -200,7 +198,7 @@ for epoch in range(epochs):
     plt.plot(epoch_line,loss_line[4])
     plt.xlabel("Epoch")
     plt.ylabel("Loss Fuse")
-    plt.savefig("images/loss_Fuse" + str(l+2) + ".png")
+    plt.savefig("images/loss_Fuse.png")
     plt.clf()
     plt.plot(epoch_line,loss_line[5])
     plt.xlabel("Epoch")
