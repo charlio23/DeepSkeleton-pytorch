@@ -1,27 +1,10 @@
-from dataset import SKLARGE
+from dataset import SKLARGE, SKLARGE_RAW
 from model import initialize_fsds
-from torch.utils.data import DataLoader, ConcatDataset
-import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 import torch
-import matplotlib.pyplot as plt
-import numpy as np
-import torch.optim as optim
-from PIL import Image
-from torch import sigmoid
-from torch.nn.functional import cross_entropy
-from torch.autograd import Variable
-import time
-from itertools import chain
 from tqdm import tqdm
-from torch.optim import lr_scheduler
-from collections import defaultdict
-from train import train
-
-def grayTrans(img):
-    img = img.data.cpu().numpy()[0]*255.0
-    img = (img).astype(np.uint8)
-    img = Image.fromarray(img, 'L')
-    return img
+from train import train, evaluate
+import numpy as np
 
 print("Importing datasets...")
 
@@ -31,6 +14,9 @@ trainListPath = "SK-LARGE/aug_data/train_pair.lst"
 trainDS = SKLARGE(rootDir, trainListPath)
 train_data = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=4)
 
+evalDS = SKLARGE_RAW("SK-LARGE/images/val", "SK-LARGE/groundTruth/val")
+eval_data = DataLoader(evalDS, shuffle=False, batch_size=1, num_workers=4)
+
 print("Initializing network...")
 
 modelPath = "model/vgg16.pth"
@@ -39,8 +25,29 @@ nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
 print("Defining hyperparameters...")
 
 ### HYPER-PARAMETERS
-learningRate = 1e-6
-p = 1.2
+learningRates = np.linspace(1e-6,1e-9,10)
+ps = np.linspace(1.1,1.8,10)
 ###
+first = True
+bestp = 0
+bestlr = 0
+minloss = 0
+results = []
+for learningRate in learningRates:
+    for p in ps:
+        try:
+            nnet = train(nnet, train_data, p, learningRate, 3)
+        
+            loss = evaluate(nnet, eval_data)
+            results.append("lr: " + str(learningRate) + ", p: " + str(p) + "loss: " + str(loss))
+            if first or loss < minloss:
+                first = False
+                bestp = p
+                bestlr = learningRate
+                minloss = loss
+        except:
+            pass
 
-nnet = train(nnet, train_data, p, learningRate, 2)
+print(results)
+print("Best learning rate is: ",bestlr)
+print("Best p is: ", bestp)

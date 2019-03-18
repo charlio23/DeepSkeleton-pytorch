@@ -28,9 +28,8 @@ def generate_quantise(quantise):
     result.append(quantise)
     return result
 
-def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 2):
+def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 3):
     momentum = 0.9
-    lossWeight = 1
     weightDecay = 2e-4
     receptive_fields = np.array([14,40,92,196])
 
@@ -115,3 +114,16 @@ def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 2):
             lr_schd.step()
 
     return nnet
+
+def evaluate(nnet, eval_data):
+    for j, data in enumerate(tqdm(eval_data), 1):
+        image, scale = data
+        image = Variable(image).cuda()
+        quantization = np.vectorize(apply_quantization)
+        quantise = torch.from_numpy(quantization(scale.numpy())).squeeze_(1).cuda()
+
+        sideOut = nnet(image)[-1]
+        
+        loss += balanced_cross_entropy(sideOut, quantise)
+
+    return loss/len(eval_data)
