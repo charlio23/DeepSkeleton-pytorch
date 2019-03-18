@@ -34,11 +34,11 @@ def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 3):
     receptive_fields = np.array([14,40,92,196])
 
     def apply_quantization(scale):
-    if scale < 0.001:
-        return 0
-    if p*scale > np.max(receptive_fields):
-        return len(receptive_fields)
-    return np.argmax(receptive_fields > p*scale) + 1
+        if scale < 0.001:
+            return 0
+        if p*scale > np.max(receptive_fields):
+            return len(receptive_fields)
+        return np.argmax(receptive_fields > p*scale) + 1
 
     # Optimizer settings.
     net_parameters_id = defaultdict(list)
