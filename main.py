@@ -38,7 +38,7 @@ nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
 print("Defining hyperparameters...")
 
 ### HYPER-PARAMETERS
-learningRate = 1e-4
+learningRate = 1e-6
 momentum = 0.9
 weightDecay = 0.0002
 receptive_fields = np.array([14,40,92,196])
