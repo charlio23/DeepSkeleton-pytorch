@@ -117,6 +117,13 @@ def generate_quantise(quantise):
     result.append(quantise)
     return result
 
+def apply_quantization(scale):
+    if scale < 0.001:
+        return 0
+    if p*scale > np.max(receptive_fields):
+        return len(receptive_fields)
+    return np.argmax(receptive_fields > p*scale) + 1
+
 print("Training started")
 
 epochs = 40
@@ -135,7 +142,7 @@ for epoch in range(epochs):
     for j, data in enumerate(tqdm(train), 1):
         image, scale = data
         image = Variable(image).cuda()
-        quantization = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
+        quantization = np.vectorize(apply_quantization)
         quantise = torch.from_numpy(quantization(scale.numpy())).squeeze_(1).cuda()
 
         quant_list = generate_quantise(quantise)

@@ -33,6 +33,14 @@ def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 2):
     lossWeight = 1
     weightDecay = 2e-4
     receptive_fields = np.array([14,40,92,196])
+
+    def apply_quantization(scale):
+    if scale < 0.001:
+        return 0
+    if p*scale > np.max(receptive_fields):
+        return len(receptive_fields)
+    return np.argmax(receptive_fields > p*scale) + 1
+
     # Optimizer settings.
     net_parameters_id = defaultdict(list)
     for name, param in nnet.named_parameters():
@@ -90,7 +98,7 @@ def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 2):
         for j, data in enumerate(tqdm(train_data), 1):
             image, scale = data
             image = Variable(image).cuda()
-            quantization = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
+            quantization = np.vectorize(apply_quantization)
             quantise = torch.from_numpy(quantization(scale.numpy())).squeeze_(1).cuda()
             quant_list = generate_quantise(quantise)
 
