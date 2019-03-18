@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from torch.optim import lr_scheduler
 from collections import defaultdict
+from torch.autograd import Variable
 
 def balanced_cross_entropy(input, target):
     #weights
