@@ -2,6 +2,7 @@ from tqdm import tqdm
 import torch
 import numpy as np
 from torch.optim import lr_scheduler
+from collections import defaultdict
 
 def balanced_cross_entropy(input, target):
     #weights
