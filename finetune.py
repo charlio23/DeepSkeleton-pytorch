@@ -35,18 +35,15 @@ minloss = 0
 results = []
 for learningRate in learningRates:
     for p in ps:
-        try:
-            nnet = train(nnet, train_data, p, learningRate, 3)
-        
-            loss = evaluate(nnet, eval_data)
-            results.append("lr: " + str(learningRate) + ", p: " + str(p) + "loss: " + str(loss))
-            if first or loss < minloss:
-                first = False
-                bestp = p
-                bestlr = learningRate
-                minloss = loss
-        except:
-            pass
+        nnet = train(nnet, train_data, p, learningRate, 3)
+    
+        loss = evaluate(nnet, eval_data)
+        results.append("lr: " + str(learningRate) + ", p: " + str(p) + "loss: " + str(loss))
+        if first or loss < minloss:
+            first = False
+            bestp = p
+            bestlr = learningRate
+            minloss = loss
 
 print(results)
 print("Best learning rate is: ",bestlr)
