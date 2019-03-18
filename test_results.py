@@ -1,7 +1,7 @@
 import os
 import torch
 from dataset import SKLARGE_TEST
-from model import LMSDS
+from model import LMSDS, FSDS
 from torch.autograd import Variable
 from PIL import Image
 import numpy as np
@@ -28,7 +28,7 @@ print("Loading trained network...")
 
 networkPath = "FSDS.pth"
 
-nnet = LMSDS().cuda()
+nnet = FSDS().cuda()
 dic = torch.load(networkPath)
 dicli = list(dic.keys())
 new = {}

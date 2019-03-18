@@ -38,7 +38,7 @@ nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
 print("Defining hyperparameters...")
 
 ### HYPER-PARAMETERS
-learningRate = 1e-6
+learningRate = 1e-7
 momentum = 0.9
 lossWeight = 1
 initializationNestedFilters = 0
@@ -93,7 +93,7 @@ optimizer = torch.optim.SGD([
 ], lr=learningRate, momentum=momentum, weight_decay=weightDecay)
 
 # Learning rate scheduler.
-lr_schd = lr_scheduler.StepLR(optimizer, step_size=2e5, gamma=0.1)
+lr_schd = lr_scheduler.StepLR(optimizer, step_size=1e5, gamma=0.1)
 
 def balanced_cross_entropy(input, target):
     #weights
