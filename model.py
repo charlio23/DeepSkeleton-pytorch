@@ -116,12 +116,6 @@ class FSDS(torch.nn.Module):
 
         self.fuseScale3 = torch.nn.Conv2d(in_channels=2, out_channels=1,
             kernel_size=1, stride=1, padding=0, bias=False)
-
-        with torch.no_grad():
-            self.fuseScale0.weight.div_(torch.norm(self.fuseScale0.weight, dim=1, keepdim=True))
-            self.fuseScale1.weight.div_(torch.norm(self.fuseScale1.weight, dim=1, keepdim=True))
-            self.fuseScale2.weight.div_(torch.norm(self.fuseScale2.weight, dim=1, keepdim=True))
-            self.fuseScale3.weight.div_(torch.norm(self.fuseScale3.weight, dim=1, keepdim=True))
         
         self.softmax = torch.nn.Softmax(dim=1)
         
