@@ -4,6 +4,8 @@ import numpy as np
 from torch.optim import lr_scheduler
 from collections import defaultdict
 from torch.autograd import Variable
+import torch.optim as optim
+from torch.nn.functional import cross_entropy
 
 def balanced_cross_entropy(input, target):
     #weights
