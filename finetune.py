@@ -25,8 +25,8 @@ nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
 print("Defining hyperparameters...")
 
 ### HYPER-PARAMETERS
-learningRates = [1e-6, 5e-7, 1e-7, 5e-8, 1e-8, 5e-9, 1e-9]
-ps = np.linspace(1.1,1.8,10)
+learningRates = [1e-7]
+ps = np.linspace(1.2,1.8,10)
 ###
 first = True
 bestp = 0
@@ -35,15 +35,17 @@ minloss = 0
 results = []
 for learningRate in learningRates:
     for p in ps:
-        nnet = train(nnet, train_data, p, learningRate, 3)
-    
-        loss = evaluate(nnet, eval_data)
-        results.append("lr: " + str(learningRate) + ", p: " + str(p) + "loss: " + str(loss))
-        if first or loss < minloss:
-            first = False
-            bestp = p
-            bestlr = learningRate
-            minloss = loss
+        try:
+            nnet = train(nnet, train_data, p, learningRate, 3)
+            loss = evaluate(nnet, eval_data)
+            results.append("lr: " + str(learningRate) + ", p: " + str(p) + "loss: " + str(loss))
+            if first or loss < minloss:
+                first = False
+                bestp = p
+                bestlr = learningRate
+                minloss = loss
+        except:
+            pass
 
 print(results)
 print("Best learning rate is: ",bestlr)
