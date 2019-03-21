@@ -107,16 +107,16 @@ class FSDS(torch.nn.Module):
             kernel_size=1, stride=1, padding=0)
 
         self.fuseScale0 = torch.nn.Conv2d(in_channels=4, out_channels=1,
-            kernel_size=1, stride=1, padding=0, bias=False)
+            kernel_size=1, stride=1, padding=0)
 
         self.fuseScale1 = torch.nn.Conv2d(in_channels=4, out_channels=1,
-            kernel_size=1, stride=1, padding=0, bias=False)
+            kernel_size=1, stride=1, padding=0)
 
         self.fuseScale2 = torch.nn.Conv2d(in_channels=3, out_channels=1,
-            kernel_size=1, stride=1, padding=0, bias=False)
+            kernel_size=1, stride=1, padding=0)
 
         self.fuseScale3 = torch.nn.Conv2d(in_channels=2, out_channels=1,
-            kernel_size=1, stride=1, padding=0, bias=False)
+            kernel_size=1, stride=1, padding=0)
         
         self.softmax = torch.nn.Softmax(dim=1)
 
