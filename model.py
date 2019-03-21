@@ -121,8 +121,6 @@ class FSDS(torch.nn.Module):
         self.fuseScale4 = torch.nn.Conv2d(in_channels=1, out_channels=1,
             kernel_size=1, stride=1, padding=0)
 
-        self.softmax = torch.nn.Softmax(dim=1)
-
         # Fixed bilinear weights.
         self.weight_deconv2 = make_bilinear_weights(4, 2).cuda()
         self.weight_deconv3 = make_bilinear_weights(8, 3).cuda()

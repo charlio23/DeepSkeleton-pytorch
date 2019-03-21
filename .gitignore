@@ -12,6 +12,7 @@ im
 images-demo
 data
 output
+output-original
 *.pt
 *.pth
 *.pytorch

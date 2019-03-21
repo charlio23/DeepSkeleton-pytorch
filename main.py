@@ -130,7 +130,7 @@ epochs = 40
 i = 0
 dispInterval = 1000
 lossAcc = [0.0]*6
-train_size = 10
+train_size = 2
 epoch_line = []
 loss_line = [[], [], [], [], [], []]
 nnet.train()
@@ -156,19 +156,20 @@ for epoch in range(epochs):
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        lr_schd.step()
-        #lossAvg = loss/train_size
-        #lossAvg.backward()
+        #loss.backward()
+        lossAvg = loss/train_size
+        lossAvg.backward()
+        
+
+        if j % train_size == 0:
+            optimizer.step()
+            optimizer.zero_grad()
+            lr_schd.step()
+            
         for l in range(0,5):
             lossAcc[l] += loss_list[l].clone().item()
         lossAcc[5] += loss.clone().item()
-        
 
-        #if j % train_size == 0:
-        
         if (i+1) % dispInterval == 0:
 
             timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
