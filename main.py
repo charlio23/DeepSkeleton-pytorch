@@ -93,7 +93,8 @@ optimizer = torch.optim.SGD([
 lr_schd = lr_scheduler.StepLR(optimizer, step_size=3e4, gamma=0.1)
 
 def balanced_cross_entropy(input, target):
-    #weights
+    # weights original paper implementation
+    """
     weights = []
     for i in range(0,input.size(1)):
         w = torch.sum(target == i).item()
@@ -103,9 +104,16 @@ def balanced_cross_entropy(input, target):
             weights.append(1.0/w)
     weight_total = sum(weights)
     weights = (torch.tensor(weights).float()/weight_total).cuda()
+    """
+    # weights caffe code implementation
+    batch, height, width = target.shape
+    total_weight = batch*height*width
+    pos_weight = torch.sum(target > 0.1).item()/total_weight
+    neg_weight = 1 - pos_weight
+    weights = torch.ones(input.size(1))*neg_weight
+    weights[0] = pos_weight
     #CE loss
-    loss = cross_entropy(input,target,weight=weights,reduction='none')
-    batch = target.shape[0]
+    loss = cross_entropy(input,target,weight=weights.cuda(),reduction='none')
 
     return torch.sum(loss)/batch
 
