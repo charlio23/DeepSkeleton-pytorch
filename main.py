@@ -69,10 +69,10 @@ for name, param in nnet.named_parameters():
                   'module.sideOut3.bias', 'module.sideOut4.bias', 'module.sideOut5.bias']:
         print('{:26} lr: 0.02 decay:0'.format(name)); net_parameters_id['score_dsn_1-5.bias'].append(param)
     elif name in ['module.fuseScale0.weight', 'module.fuseScale1.weight',
-                  'module.fuseScale2.weight', 'module.fuseScale3.weight']:
+                  'module.fuseScale2.weight', 'module.fuseScale3.weight','module.fuseScale3.weight']:
         print('{:26} lr:0.001 decay:1'.format(name)); net_parameters_id['score_final.weight'].append(param)
     elif name in ['module.fuseScale0.bias', 'module.fuseScale1.bias',
-                  'module.fuseScale2.bias', 'module.fuseScale3.bias']:
+                  'module.fuseScale2.bias', 'module.fuseScale3.bias','module.fuseScale4.bias']:
         print('{:26} lr:0.002 decay:0'.format(name)); net_parameters_id['score_final.bias'].append(param)
 
 # IMPORTANT: In the official implementation paper, they specify that the lr is 5 times the base learning rate, contrary to their caffe code version
