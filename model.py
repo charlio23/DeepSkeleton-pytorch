@@ -250,10 +250,10 @@ class FSDS(torch.nn.Module):
         #sideOut4 = interpolate(self.sideOut4(conv4), size=(height,width), mode='bilinear', align_corners=False)
         #sideOut5 = interpolate(self.sideOut5(conv5), size=(height,width), mode='bilinear', align_corners=False)
 
-        softSideOut2 = self.softmax(sideOut2)
-        softSideOut3 = self.softmax(sideOut3)
-        softSideOut4 = self.softmax(sideOut4)
-        softSideOut5 = self.softmax(sideOut5)
+        #softSideOut2 = self.softmax(sideOut2)
+        #softSideOut3 = self.softmax(sideOut3)
+        #softSideOut4 = self.softmax(sideOut4)
+        #softSideOut5 = self.softmax(sideOut5)
 
         fuse0 = torch.cat((sideOut2[:,0:1,:,:], sideOut3[:,0:1,:,:], sideOut4[:,0:1,:,:], sideOut5[:,0:1,:,:] ),1)
         fuse1 = torch.cat((sideOut2[:,1:2,:,:], sideOut3[:,1:2,:,:], sideOut4[:,1:2,:,:], sideOut5[:,1:2,:,:] ),1)
