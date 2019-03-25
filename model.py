@@ -122,10 +122,10 @@ class FSDS(torch.nn.Module):
             kernel_size=1, stride=1, padding=0)
 
         # Fixed bilinear weights.
-        self.weight_deconv2 = make_bilinear_weights(4, 2)
-        self.weight_deconv3 = make_bilinear_weights(8, 3)
-        self.weight_deconv4 = make_bilinear_weights(16, 4)
-        self.weight_deconv5 = make_bilinear_weights(32, 5)
+        self.weight_deconv2 = make_bilinear_weights(4, 2).cuda()
+        self.weight_deconv3 = make_bilinear_weights(8, 3).cuda()
+        self.weight_deconv4 = make_bilinear_weights(16, 4).cuda()
+        self.weight_deconv5 = make_bilinear_weights(32, 5).cuda()
 
         # Prepare for aligned crop.
         self.crop1_margin, self.crop2_margin, self.crop3_margin, self.crop4_margin, self.crop5_margin = \
