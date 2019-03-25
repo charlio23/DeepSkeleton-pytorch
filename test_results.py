@@ -28,7 +28,7 @@ print("Loading trained network...")
 
 networkPath = "FSDS.pth"
 
-nnet = FSDS().cuda()
+nnet = FSDS()
 dic = torch.load(networkPath)
 dicli = list(dic.keys())
 new = {}
@@ -43,9 +43,9 @@ nnet.load_state_dict(new)
 print("Generating test results...")
 soft = torch.nn.Softmax(dim=1)
 
-for j, data in enumerate(tqdm(test), 0):
+for data in tqdm(test):
     image, imgName = data
-    image = Variable(image).cuda()
+    image = Variable(image, requires_grad=False)
     sideOuts = nnet(image)
     fuse = grayTrans((1 - soft(sideOuts[4])[0][0]).unsqueeze_(0))
     fuse.save(testOutput + imgName[0])
