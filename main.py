@@ -128,7 +128,7 @@ def balanced_cross_entropy(input, target):
 def regressor_loss(input, targetScale, targetQuant):
     weight = (targetQuant > 0.01).unsqueeze_(1).float()
     weight_total = torch.sum(weight)
-    loss = torch.sum(weight*mse_loss(input, targetScale, reduction='none'))/weight_total
+    loss = torch.sum(weight*mse_loss(input, targetScale, reduction='none'))
     batch = targetScale.shape[0]
     return loss/batch
 
@@ -215,7 +215,7 @@ for epoch in range(epochs):
                 lossDisp = lossAcc[l]/dispInterval
                 loss_line[l].append(lossDisp)
                 lossAcc[l] = 0.0
-                if l == 5:
+                if l == 9:
                     print("%s epoch: %d iter:%d loss:%.6f"%(timestr, epoch+1, i+1, lossDisp))
         i += 1
 
