@@ -230,7 +230,9 @@ for epoch in range(epochs):
 
     torch.save(nnet.state_dict(), 'LMSDS.pth')
     plt.clf()
-    for l in range(0,4):
+    for l in range(0,9):
+        if l == 4:
+            continue
         plt.plot(epoch_line,loss_line[l])
         plt.xlabel("Epoch")
         plt.ylabel("Loss SO " + str(l+2))
@@ -241,7 +243,7 @@ for epoch in range(epochs):
     plt.ylabel("Loss Fuse")
     plt.savefig("images/loss_Fuse.png")
     plt.clf()
-    plt.plot(epoch_line,loss_line[5])
+    plt.plot(epoch_line,loss_line[9])
     plt.xlabel("Epoch")
     plt.ylabel("Loss Total")
     plt.savefig("images/loss_Total.png")
