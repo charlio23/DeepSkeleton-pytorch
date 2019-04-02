@@ -188,7 +188,7 @@ for epoch in range(epochs):
         loss_list_scale = [regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])]
 
         loss = sum(loss_list) + L*sum(loss_list_scale)
-        
+
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
@@ -202,10 +202,8 @@ for epoch in range(epochs):
             lr_schd.step()
             
         for l in range(0,5):
-            print(l)
             lossAcc[l] += loss_list[l].clone().item()
         for l in range(5,9):
-            print(l)
             lossAcc[l] += loss_list_scale[l - 5].clone().item()
         lossAcc[9] += loss.clone().item()
 
