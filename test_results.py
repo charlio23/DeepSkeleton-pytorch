@@ -16,7 +16,7 @@ def grayTrans(img):
 
 print("Loading train dataset...")
 
-rootDirImgTest = "data/images/test/"
+rootDirImgTest = "SK-LARGE/images/test/"
 testOutput = "output/"
 
 testDS = SKLARGE_TEST(rootDirImgTest)

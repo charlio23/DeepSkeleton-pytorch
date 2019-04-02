@@ -1,5 +1,5 @@
 from dataset import SKLARGE
-from model import initialize_fsds
+from model import initialize_fsds, initialize_lmsds
 from torch.utils.data import DataLoader, ConcatDataset
 import torchvision.transforms as transforms
 import torch
@@ -8,7 +8,7 @@ import numpy as np
 import torch.optim as optim
 from PIL import Image
 from torch import sigmoid
-from torch.nn.functional import cross_entropy
+from torch.nn.functional import cross_entropy, mse_loss
 from torch.autograd import Variable
 import time
 from itertools import chain
@@ -33,7 +33,7 @@ train = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=4)
 print("Initializing network...")
 
 modelPath = "model/vgg16.pth"
-nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
+nnet = torch.nn.DataParallel(initialize_lmsds(modelPath)).cuda()
 
 print("Defining hyperparameters...")
 
@@ -43,6 +43,7 @@ momentum = 0.9
 weightDecay = 0.0002
 receptive_fields = np.array([14,40,92,196])
 p = 1.2
+L = 1
 ###
 
 # Optimizer settings.
@@ -124,12 +125,26 @@ def balanced_cross_entropy(input, target):
 
     return torch.sum(loss)/batch
 
+def regressor_loss(input, targetScale, targetQuant):
+    weight = (targetQuant > 0.01).unsqueeze_(1).float()
+    weight_total = torch.sum(weight)
+    loss = torch.sum(weight*mse_loss(input, targetScale, reduction='none'))/weight_total
+    batch = targetScale.shape[0]
+    return loss/batch
+
+
 def generate_quantise(quantise):
     result = []
     for i in range(1,5):
         result.append(quantise*(quantise <= i).long())
 
     result.append(quantise)
+    return result
+
+def generate_scales(quant_list, fields, scale):
+    result = []
+    for quantise, r in zip(quant_list,fields):
+        result.append(2*((quantise).float()*scale)/r - 1)
     return result
 
 def apply_quantization(scale):
@@ -144,10 +159,10 @@ print("Training started")
 epochs = 40
 i = 0
 dispInterval = 1000
-lossAcc = [0.0]*6
+lossAcc = [0.0]*10
 train_size = 2
 epoch_line = []
-loss_line = [[], [], [], [], [], []]
+loss_line = [[], [], [], [], [], [], [], [], [], []]
 nnet.train()
 optimizer.zero_grad()
 soft = torch.nn.Softmax(dim=1)
@@ -157,21 +172,26 @@ for epoch in range(epochs):
     for j, data in enumerate(tqdm(train), 1):
         image, scale = data
         image = Variable(image).cuda()
+        
         quantization = np.vectorize(apply_quantization)
         quantise = torch.from_numpy(quantization(scale.numpy())).squeeze_(1).cuda()
-
         quant_list = generate_quantise(quantise)
-        #scale = Variable(scale).cuda()
-        sideOuts = nnet(image)
         
+        scale = Variable(scale).cuda()
+        scale_list = generate_scales(quant_list, receptive_fields, scale)
+
+        sideOuts = nnet(image)
+        quantise_SO = sideOuts[0:5]
+        scale_SO = sideOuts[5:]
+
         loss_list = [balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)]
+        loss_list_scale = [regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])]
 
-        loss = sum(loss_list)
-
+        loss = sum(loss_list) + L*sum(loss_list_scale)
+        
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
 
-        #loss.backward()
         lossAvg = loss/train_size
         lossAvg.backward()
         
@@ -182,14 +202,18 @@ for epoch in range(epochs):
             lr_schd.step()
             
         for l in range(0,5):
+            print(l)
             lossAcc[l] += loss_list[l].clone().item()
-        lossAcc[5] += loss.clone().item()
+        for l in range(5,9):
+            print(l)
+            lossAcc[l] += loss_list_scale[l - 5].clone().item()
+        lossAcc[9] += loss.clone().item()
 
         if (i+1) % dispInterval == 0:
 
             timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             epoch_line.append(epoch + j/len(train))
-            for l in range(0,6):
+            for l in range(0,10):
                 lossDisp = lossAcc[l]/dispInterval
                 loss_line[l].append(lossDisp)
                 lossAcc[l] = 0.0
@@ -206,7 +230,7 @@ for epoch in range(epochs):
         grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save('images/sample_' + str(k+1) + '.png')
     grayTrans((quantise > 0.5)).save('images/sample_T.png')
 
-    torch.save(nnet.state_dict(), 'FSDS.pth')
+    torch.save(nnet.state_dict(), 'LMSDS.pth')
     plt.clf()
     for l in range(0,4):
         plt.plot(epoch_line,loss_line[l])
