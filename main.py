@@ -43,7 +43,7 @@ momentum = 0.9
 weightDecay = 0.0002
 receptive_fields = np.array([14,40,92,196])
 p = 1.2
-L = 1
+L = 0.1
 ###
 
 # Optimizer settings.
@@ -69,11 +69,21 @@ for name, param in nnet.named_parameters():
         print('{:26} lr:  200 decay:0'.format(name)); net_parameters_id['conv5.bias'].append(param)
     elif name in ['module.sideOut1.weight', 'module.sideOut2.weight',
                   'module.fuseScale2.weight', 'module.sideOut3.weight',
-                  'module.sideOut4.weight', 'module.sideOut5.weight']:
+                  'module.sideOut4.weight', 'module.sideOut5.weight',
+                  'module.sideOutLoc1.weight', 'module.sideOutLoc2.weight',
+                  'module.sideOutLoc3.weight','module.sideOutLoc4.weight',
+                  'module.sideOutLoc5.weight','module.sideOutScale1.weight',
+                  'module.sideOutScale2.weight','module.sideOutScale3.weight',
+                  'module.sideOutScale4.weight','module.sideOutScale5.weight']:
         print('{:26} lr: 0.01 decay:1'.format(name)); net_parameters_id['score_dsn_1-5.weight'].append(param)
     elif name in ['module.sideOut1.bias', 'module.sideOut2.bias',
                   'module.sideOut3.bias', 'module.sideOut4.bias',
-                  'module.sideOut5.bias']:
+                  'module.sideOut5.bias','module.sideOutLoc1.bias', 
+                  'module.sideOutLoc2.bias','module.sideOutLoc3.bias',
+                  'module.sideOutLoc4.bias','module.sideOutLoc5.bias',
+                  'module.sideOutScale1.bias','module.sideOutScale2.bias',
+                  'module.sideOutScale3.bias', 'module.sideOutScale4.bias',
+                  'module.sideOutScale5.bias']:
         print('{:26} lr: 0.02 decay:0'.format(name)); net_parameters_id['score_dsn_1-5.bias'].append(param)
     elif name in ['module.fuseScale0.weight', 'module.fuseScale1.weight',
                   'module.fuseScale3.weight','module.fuseScale3.weight']:
