@@ -26,9 +26,9 @@ os.makedirs(testOutput, exist_ok=True)
 
 print("Loading trained network...")
 
-networkPath = "FSDS.pth"
+networkPath = "LMSDS.pth"
 
-nnet = FSDS()
+nnet = LMSDS()
 dic = torch.load(networkPath)
 dicli = list(dic.keys())
 new = {}

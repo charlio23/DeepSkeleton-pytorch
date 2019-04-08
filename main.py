@@ -154,7 +154,7 @@ def generate_quantise(quantise):
 def generate_scales(quant_list, fields, scale):
     result = []
     for quantise, r in zip(quant_list,fields):
-        result.append(2*((quantise).float()*scale)/r - 1)
+        result.append(2*((quantise > 0).float()*scale)/r - 1)
     return result
 
 def apply_quantization(scale):

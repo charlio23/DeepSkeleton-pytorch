@@ -11,8 +11,8 @@ from tqdm import tqdm
 from scipy.io import loadmat
 from scipy.ndimage.morphology import distance_transform_edt as bwdist
 
-rootDirGt = "data/groundTruth/train/"
-rootDirImg = "data/images/train/"
+rootDirGt = "SK-LARGE/groundTruth/train/"
+rootDirImg = "SK-LARGE/images/train/"
 
 listData = sorted(os.listdir(rootDirGt))
 listImages = sorted(os.listdir(rootDirImg))
