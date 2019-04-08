@@ -62,8 +62,6 @@ def generate_scales(quant_list, fields, scale):
     for quant, r in zip(quant_list,fields):
         normalization = (2*((quant > 0).float()*scale)/r) - 1
         result.append(normalization)
-        print("Scale: ", torch.max(quant))
-        print("Scale for ", r, ", Max: ", torch.max(normalization), " Min: ", torch.min(normalization))
 
     return result
 
@@ -95,11 +93,11 @@ scale_fsds = torch.zeros(ind.size(1), ind.size(2))
 
 for i in range(0,ind.size(1)):
     for j in range(0,ind.size(2)):
-        index = quantise[0,i,j] - 1
+        index = ind[0,i,j] - 1
         if index < 0:
             scale[i,j] = 0
         else:
-            scale[i,j] = (scale_list[index][0,i,j] + 1)*receptive_fields[index]/2
+            scale[i,j] = (scale_outs[index][0,0,i,j] + 1)*receptive_fields[index]/2
 img = Image.new("RGB",(len(scale[0]),len(scale)))
 draw = ImageDraw.Draw(img)
 scalee = scalee.squeeze_(0)
