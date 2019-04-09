@@ -20,13 +20,15 @@ print("Loading train dataset...")
 #0aa3fe72683525f40c580332172acb91
 #42b43118f781e12791ed3021eb19d357
 #0a83a27cddd7f016beee20585b90f1f8
-demoPath = "SK-LARGE/aug_data/im_scale/1/o/0/f/0/0aa3fe72683525f40c580332172acb91.jpg"
+demoPath = "SK-LARGE/images/test/695751551b8a23d9f1dcf21c592988f4.jpg"
 gtPath = "SK-LARGE/aug_data/gt_scale/1/o/0/f/0/0aa3fe72683525f40c580332172acb91.png"
+skPath = "output/-nms/695751551b8a23d9f1dcf21c592988f4.png"
 testOutput = "images-demo/"
 
 transf = transforms.ToTensor()
 image = transf(Image.open(demoPath).convert('RGB')).unsqueeze_(0)
 scale = transf(Image.open(gtPath).convert('L'))*255.0
+skeleton_nms = transf(Image.open(skPath).convert('L'))
 
 os.makedirs(testOutput, exist_ok=True)
 
@@ -104,14 +106,27 @@ scalee = scalee.squeeze_(0)
 for i in range(len(scale)):
     for j in range(len(scale[0])):
         r = scale[i][j]/2
-        if scale[i][j] > 0.01:
+        if skeleton_nms[0][i][j] > 0.1:
             x = j
             y = i
             draw.ellipse((x-r, y-r, x+r, y+r), fill='blue')
 
+img2 = Image.new("RGB",(len(scale[0]),len(scale)))
+draw2 = ImageDraw.Draw(img2)
+scalee = scalee.squeeze_(0)
+for i in range(len(scale)):
+    for j in range(len(scale[0])):
+        r = scale[i][j]/2
+        if scale[i][j] > 0.01:
+            x = j
+            y = i
+            draw2.ellipse((x-r, y-r, x+r, y+r), fill='blue')
+
 fig = plt.figure(figsize=(8,8))
-plt.subplot(1,2,1)
+plt.subplot(1,3,1)
 plt.imshow(img)
-plt.subplot(1,2,2)
+plt.subplot(1,3,2)
+plt.imshow(img2)
+plt.subplot(1,3,3)
 plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
 plt.show(fig)

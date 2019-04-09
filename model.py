@@ -537,11 +537,6 @@ class LMSDS(torch.nn.Module):
         sideOutScale5 = upsample5[:, :, self.crop5_margin:self.crop5_margin+image_h,
                                 self.crop5_margin:self.crop5_margin+image_w]
 
-        sideOutScale2 = sigmoid(sideOutScale2)
-        sideOutScale3 = sigmoid(sideOutScale3)
-        sideOutScale4 = sigmoid(sideOutScale4)
-        sideOutScale5 = sigmoid(sideOutScale5)
-
         #we do not ouptut softmax funtions as they are calculated with the cross entropy loss
 
         return sideOut2, sideOut3, sideOut4, sideOut5, fuse, sideOutScale2, sideOutScale3, sideOutScale4, sideOutScale5
