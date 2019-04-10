@@ -125,7 +125,7 @@ def balanced_cross_entropy(input, target):
     """
     # weights caffe code implementation
     batch, height, width = target.shape
-    total_weight = batch*height*width
+    total_weight = height*width
     pos_weight = torch.sum(target > 0.1).item()/total_weight
     neg_weight = 1 - pos_weight
     weights = torch.ones(input.size(1))*neg_weight
@@ -137,7 +137,6 @@ def balanced_cross_entropy(input, target):
 
 def regressor_loss(input, targetScale, targetQuant):
     weight = (targetQuant > 0.01).unsqueeze_(1).float()
-    weight_total = torch.sum(weight)
     loss = torch.sum(weight*mse_loss(input, targetScale, reduction='none'))
     batch = targetScale.shape[0]
     return loss/batch
@@ -176,17 +175,10 @@ loss_line = [[], [], [], [], [], [], [], [], [], []]
 nnet.train()
 optimizer.zero_grad()
 soft = torch.nn.Softmax(dim=1)
-time_data = []
-time_network = []
-time_loss = []
 
 for epoch in range(epochs):
     print("Epoch: " + str(epoch + 1))
     for j, data in enumerate(tqdm(train), 1):
-        if j != 1:
-            end = time.time()
-            time_data.append(end - start)
-        start = time.time()
         image, scale = data
         image = Variable(image).cuda()
         
@@ -200,9 +192,7 @@ for epoch in range(epochs):
         sideOuts = nnet(image)
         quantise_SO = sideOuts[0:5]
         scale_SO = sideOuts[5:]
-        end = time.time()
-        time_network.append(end - start)
-        start = time.time()
+
         loss_list = [balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)]
         loss_list_scale = [regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])]
 
@@ -214,15 +204,12 @@ for epoch in range(epochs):
         lossAvg = loss/train_size
         lossAvg.backward()
         
-        end = time.time()
-        time_loss.append(end - start)
+
         if j % train_size == 0:
             optimizer.step()
             optimizer.zero_grad()
             lr_schd.step()
-            print("Loss time: ", np.average(time_loss))
-            print("Network time: ", np.average(time_network))
-            print("Data time: ", np.average(time_data))
+            
         for l in range(0,5):
             lossAcc[l] += loss_list[l].clone().item()
         for l in range(5,9):
