@@ -20,9 +20,9 @@ print("Loading train dataset...")
 #0aa3fe72683525f40c580332172acb91
 #42b43118f781e12791ed3021eb19d357
 #0a83a27cddd7f016beee20585b90f1f8
-demoPath = "SK-LARGE/images/test/695751551b8a23d9f1dcf21c592988f4.jpg"
-gtPath = "SK-LARGE/aug_data/gt_scale/1/o/0/f/0/0aa3fe72683525f40c580332172acb91.png"
-skPath = "output/-nms/695751551b8a23d9f1dcf21c592988f4.png"
+demoPath = "SK-LARGE/images/test/2a95202f755166891674098f0d41b1b3.jpg"
+gtPath = "SK-LARGE/aug_data/gt_scale/1/o/0/f/0/0a83a27cddd7f016beee20585b90f1f8.png"
+skPath = "output-nms/2a95202f755166891674098f0d41b1b3.png"
 testOutput = "images-demo/"
 
 transf = transforms.ToTensor()
