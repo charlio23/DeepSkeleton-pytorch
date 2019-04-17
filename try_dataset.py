@@ -4,12 +4,10 @@ import torchvision
 import pandas as pd
 from PIL import Image, ImageDraw
 import os
-import matplotlib.pyplot as plt
 import math
 import numpy as np
 from tqdm import tqdm
 from scipy.io import loadmat
-from scipy.ndimage.morphology import distance_transform_edt as bwdist
 
 rootDirGt = "SK-LARGE/groundTruth/train/"
 rootDirImg = "SK-LARGE/images/train/"

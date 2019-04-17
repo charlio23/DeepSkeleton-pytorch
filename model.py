@@ -557,4 +557,4 @@ def make_bilinear_weights(size, num_channels):
         for j in range(num_channels):
             if i == j:
                 w[i, j] = filt
-    return w.cuda()
+    return w
