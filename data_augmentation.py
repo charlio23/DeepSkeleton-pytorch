@@ -23,7 +23,7 @@ for scale in tqdm([0.8, 1.0, 1.2]):
                 img = (edge).astype(np.uint8)
                 img = Image.fromarray(img, 'L')
                 img = img.rotate(angle, PIL.Image.BICUBIC, True)
-                new_size = (np.ceil(scale*img.size[0]), np.ceil(scale*img.size[1]))
+                new_size = (int(np.ceil(scale*img.size[0])), int(np.ceil(scale*img.size[1])))
                 img = img.resize(new_size)
                 if flip == 1:
                     img = img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
