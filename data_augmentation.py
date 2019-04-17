@@ -8,8 +8,9 @@ from scipy.io import loadmat
 rootDirGt = "SK-LARGE/groundTruth/train/"
 listData = sorted(os.listdir(rootDirGt))
 
-output_dir = "SK-LARGE/aug_data/ed-scale/"
-for scale in tqdm([0.8, 1.0, 1.2]):
+output_dir = "SK-LARGE/aug_data/ed_scale/"
+img_dir = "SK-LARGE/aug_data/img_scale"
+for scale in tqdm([0.8, 1, 1.2]):
     os.makedirs(output_dir + str(scale) + "/o/", exist_ok=True)
     for angle in tqdm([0, 90, 180, 270]):
         os.makedirs(output_dir + str(scale) + "/o/" + str(angle) + "/f/", exist_ok=True)
@@ -17,7 +18,8 @@ for scale in tqdm([0.8, 1.0, 1.2]):
             os.makedirs(output_dir + str(scale) + "/o/" + str(angle) + "/f/" + str(flip), exist_ok=True)
             for targetName in tqdm(listData):
                 path = output_dir + str(scale) + "/o/" + str(angle) + "/f/" + str(flip) + "/"
-                name = targetName.replace(".mat", ".jpg")
+                name = targetName.replace(".mat", ".png")
+                
                 itemGround = loadmat(rootDirGt + targetName)
                 edge = (itemGround['edge']).astype(float)*255.0
                 img = (edge).astype(np.uint8)
@@ -30,3 +32,12 @@ for scale in tqdm([0.8, 1.0, 1.2]):
                 elif flip == 2:
                     img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
                 img.save(path + name)
+                """
+                ground = Image.open(path + name)
+                img = Image.open(path.replace("ed_scale","im_scale") + name.replace(".png", ".jpg"))
+                
+                ground_s = ground.size
+                img_s = img.size
+                if (ground_s != img_s):
+                    print("Image and groundTruth sizes do not fit!")
+                """
