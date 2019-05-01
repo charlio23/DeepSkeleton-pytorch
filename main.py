@@ -15,6 +15,7 @@ from itertools import chain
 from tqdm import tqdm
 from torch.optim import lr_scheduler
 from collections import defaultdict
+import os
 
 def grayTrans(img):
     img = img.data.cpu().numpy()[0]*255.0
@@ -22,18 +23,23 @@ def grayTrans(img):
     img = Image.fromarray(img, 'L')
     return img
 
+image_dir = "images-coco"
+os.makedirs(image_dir, exist_ok=True)
+model_save_name = "FSDS-COCO.pth"
+
 print("Importing datasets...")
 
 rootDir = "SK-LARGE/"
 trainListPath = "SK-LARGE/aug_data/train_pair.lst"
 
-trainDS = SKLARGE(rootDir, trainListPath)
+#trainDS = SKLARGE(rootDir, trainListPath)
+trainDS = COCO("../train2017/",True)
 train = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=4)
 
 print("Initializing network...")
 
 modelPath = "model/vgg16.pth"
-nnet = torch.nn.DataParallel(initialize_lmsds(modelPath)).cuda()
+nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
 
 print("Defining hyperparameters...")
 
@@ -229,15 +235,15 @@ for epoch in range(epochs):
         i += 1
 
     plt.imshow(np.transpose(image[0].cpu().numpy(), (1, 2, 0)))
-    plt.savefig("images/sample_0.png")
+    plt.savefig(image_dir + "/sample_0.png")
 
     # transform to grayscale images
 
     for k in range(0,5):
-        grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save('images/sample_' + str(k+1) + '.png')
-    grayTrans((quantise > 0.5)).save('images/sample_T.png')
+        grayTrans((1 - soft(sideOuts[k])[0][0]).unsqueeze_(0)).save(image_dir + '/sample_' + str(k+1) + '.png')
+    grayTrans((quantise > 0.5)).save(image_dir + '/sample_T.png')
 
-    torch.save(nnet.state_dict(), 'LMSDS.pth')
+    torch.save(nnet.state_dict(), model_save_name)
     plt.clf()
     for l in range(0,9):
         if l == 4:
@@ -245,15 +251,15 @@ for epoch in range(epochs):
         plt.plot(epoch_line,loss_line[l])
         plt.xlabel("Epoch")
         plt.ylabel("Loss SO " + str(l+2))
-        plt.savefig("images/loss_SO_" + str(l+2) + ".png")
+        plt.savefig(image_dir + "/loss_SO_" + str(l+2) + ".png")
         plt.clf()
     plt.plot(epoch_line,loss_line[4])
     plt.xlabel("Epoch")
     plt.ylabel("Loss Fuse")
-    plt.savefig("images/loss_Fuse.png")
+    plt.savefig(image_dir + "/loss_Fuse.png")
     plt.clf()
     plt.plot(epoch_line,loss_line[9])
     plt.xlabel("Epoch")
     plt.ylabel("Loss Total")
-    plt.savefig("images/loss_Total.png")
+    plt.savefig(image_dir + "/loss_Total.png")
     plt.clf()
