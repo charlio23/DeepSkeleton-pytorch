@@ -1,4 +1,4 @@
-from dataset import SKLARGE
+from dataset import SKLARGE, COCO
 from model import initialize_fsds, initialize_lmsds
 from torch.utils.data import DataLoader, ConcatDataset
 import torchvision.transforms as transforms
