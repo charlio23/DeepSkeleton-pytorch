@@ -197,12 +197,13 @@ for epoch in range(epochs):
 
         sideOuts = nnet(image)
         quantise_SO = sideOuts[0:5]
-        scale_SO = sideOuts[5:]
+        #scale_SO = sideOuts[5:]
 
         loss_list = [balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)]
-        loss_list_scale = [regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])]
+        #loss_list_scale = [regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])]
 
-        loss = sum(loss_list) + L*sum(loss_list_scale)
+        loss = sum(loss_list) 
+        #+ L*sum(loss_list_scale)
 
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
@@ -218,8 +219,8 @@ for epoch in range(epochs):
             
         for l in range(0,5):
             lossAcc[l] += loss_list[l].clone().item()
-        for l in range(5,9):
-            lossAcc[l] += loss_list_scale[l - 5].clone().item()
+        #for l in range(5,9):
+        #    lossAcc[l] += loss_list_scale[l - 5].clone().item()
         lossAcc[9] += loss.clone().item()
 
         if (i+1) % dispInterval == 0:
@@ -247,7 +248,7 @@ for epoch in range(epochs):
     plt.clf()
     for l in range(0,9):
         if l == 4:
-            continue
+            break
         plt.plot(epoch_line,loss_line[l])
         plt.xlabel("Epoch")
         plt.ylabel("Loss SO " + str(l+2))
