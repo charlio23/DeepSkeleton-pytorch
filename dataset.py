@@ -38,7 +38,7 @@ class COCO(Dataset):
         make_scale = np.vectorize(lambda x, y: 0 if y < 0.99 else x)
 
         scale = make_scale(dist,targetImage)
-        targetImage = torch.from_numpy(scale).float()._unsqueeze(0)
+        targetImage = torch.from_numpy(scale).float().unsqueeze_(0)
         return inputImage, targetImage
 
 class SKLARGE(Dataset):
