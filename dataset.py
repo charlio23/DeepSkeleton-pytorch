@@ -33,7 +33,6 @@ class COCO(Dataset):
 
         targetImage = transf(Image.open(self.rootDirGt + targetName).convert('L')).squeeze_(0).numpy()> 0.5
         edge = transf(Image.open(self.rootDirGtEdges + targetName).convert('L')).squeeze_(0).numpy()> 0.5
-        print(np.max(targetImage))
         dist = 2.0*bwdist(1.0 - (edge.astype(float)))
         make_scale = np.vectorize(lambda x, y: 0 if y < 0.99 else x)
 
