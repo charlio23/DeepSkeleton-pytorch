@@ -7,11 +7,13 @@ from PIL import Image
 from scipy.ndimage.morphology import distance_transform_edt as bwdist
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 class COCO(Dataset):
     def __init__(self, rootDir, offline=False):
         self.rootDirImg = rootDir + "images/"
         self.rootDirGt = rootDir + "groundTruth/" + "skeletons/"
+        self.rootDirGtEdges = rootDir + "groundTruth/" + "edges/"
         self.listData = sorted(os.listdir(self.rootDirGt))
     def __len__(self):
         return len(self.listData)
@@ -23,12 +25,20 @@ class COCO(Dataset):
         # process the images
         transf = transforms.ToTensor()
         inputImage = transf(Image.open(self.rootDirImg + inputName).convert('RGB'))
-        targetImage = transf(Image.open(self.rootDirGt + targetName).convert('L'))
+
         tensorBlue = (inputImage[0:1, :, :] * 255.0) - 104.00698793
         tensorGreen = (inputImage[1:2, :, :] * 255.0) - 116.66876762
         tensorRed = (inputImage[2:3, :, :] * 255.0) - 122.67891434
         inputImage = torch.cat([ tensorBlue, tensorGreen, tensorRed ], 0)
 
+        targetImage = transf(Image.open(self.rootDirGt + targetName).convert('L')).squeeze_(0).numpy()> 0.5
+        edge = transf(Image.open(self.rootDirGtEdges + targetName).convert('L')).squeeze_(0).numpy()> 0.5
+        print(np.max(targetImage))
+        dist = 2.0*bwdist(1.0 - (edge.astype(float)))
+        make_scale = np.vectorize(lambda x, y: 0 if y < 0.99 else x)
+
+        scale = make_scale(dist,targetImage)
+        targetImage = torch.from_numpy(scale).float()._unsqueeze(0)
         return inputImage, targetImage
 
 class SKLARGE(Dataset):

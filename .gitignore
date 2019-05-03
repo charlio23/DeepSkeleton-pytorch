@@ -1,8 +1,6 @@
 BSDS500
 HED-BSDS
-images
-images-fsds
-images-lmsds
+images*
 model
 SK-LARGE
 skeval
