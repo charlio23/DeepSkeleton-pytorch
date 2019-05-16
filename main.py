@@ -16,6 +16,7 @@ from tqdm import tqdm
 from torch.optim import lr_scheduler
 from collections import defaultdict
 import os
+import argparse
 
 def grayTrans(img):
     img = img.data.cpu().numpy()[0]*255.0
@@ -23,9 +24,17 @@ def grayTrans(img):
     img = Image.fromarray(img, 'L')
     return img
 
+parser = argparse.ArgumentParser(description='Deep Skeleton training.')
+parser.add_argument('--LMSDS', default=False, help='Decide if you want to use FSDS or LMSDS.', action='store_true')
+args = parser.parse_args()
+
 image_dir = "images-coco"
 os.makedirs(image_dir, exist_ok=True)
-model_save_name = "LMSDS-COCO.pth"
+arch_name = "FSDS"
+if args.LMSDS:
+    arch_name = "LMSDS"
+
+model_save_name = arch_name + "-COCO.pth"
 
 print("Importing datasets...")
 
@@ -39,7 +48,11 @@ train = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=1)
 print("Initializing network...")
 
 modelPath = "model/vgg16.pth"
-nnet = torch.nn.DataParallel(initialize_lmsds(modelPath)).cuda()
+
+if args.LMSDS:
+    nnet = torch.nn.DataParallel(initialize_lmsds(modelPath)).cuda()
+else:
+    nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
 
 print("Defining hyperparameters...")
 
@@ -197,12 +210,12 @@ for epoch in range(epochs):
 
         sideOuts = nnet(image)
         quantise_SO = sideOuts[0:5]
-        scale_SO = sideOuts[5:]
-
         loss_list = [balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)]
-        loss_list_scale = [regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])]
-
-        loss = sum(loss_list) + L*sum(loss_list_scale)
+        loss = sum(loss_list)
+        if args.LMSDS:
+            scale_SO = sideOuts[5:]
+            loss_list_scale = [regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])]
+            loss += L*sum(loss_list_scale)
 
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
@@ -218,8 +231,9 @@ for epoch in range(epochs):
             
         for l in range(0,5):
             lossAcc[l] += loss_list[l].clone().item()
-        #for l in range(5,9):
-        #    lossAcc[l] += loss_list_scale[l - 5].clone().item()
+        if args.LMSDS:
+            for l in range(5,9):
+                lossAcc[l] += loss_list_scale[l - 5].clone().item()
         lossAcc[9] += loss.clone().item()
 
         if (i+1) % dispInterval == 0:
@@ -246,7 +260,7 @@ for epoch in range(epochs):
     torch.save(nnet.state_dict(), model_save_name)
     plt.clf()
     for l in range(0,9):
-        if l == 4:
+        if l == 4 and not args.LMSDS:
             break
         plt.plot(epoch_line,loss_line[l])
         plt.xlabel("Epoch")
