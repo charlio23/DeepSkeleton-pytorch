@@ -20,7 +20,7 @@ class COCO(Dataset):
                 
     def __getitem__(self, i):
         # input and target images
-        inputName = self.listData[i]
+        inputName = self.listData[i].replace('.png','.jpg')
         targetName = self.listData[i]
         # process the images
         transf = transforms.ToTensor()
