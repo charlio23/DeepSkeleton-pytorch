@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 class COCO(Dataset):
     def __init__(self, rootDir, offline=False):
         self.rootDirImg = rootDir + "images/"
-        self.rootDirGt = rootDir + "groundTruth/" + "skeletons/"
-        self.rootDirGtEdges = rootDir + "groundTruth/" + "edges/"
+        self.rootDirGt = rootDir + "groundTruth/" + "person/" + "skeletons/" + "train/"
+        self.rootDirGtEdges = rootDir + "groundTruth/" + "person/" + "edges/" + "train/"
         self.listData = sorted(os.listdir(self.rootDirGt))
     def __len__(self):
         return len(self.listData)
@@ -31,13 +31,13 @@ class COCO(Dataset):
         tensorRed = (inputImage[2:3, :, :] * 255.0) - 122.67891434
         inputImage = torch.cat([ tensorBlue, tensorGreen, tensorRed ], 0)
 
-        targetImage = transf(Image.open(self.rootDirGt + targetName).convert('L')).squeeze_(0).numpy()> 0.5
-        edge = transf(Image.open(self.rootDirGtEdges + targetName).convert('L')).squeeze_(0).numpy()> 0.5
-        dist = 2.0*bwdist(1.0 - (edge.astype(float)))
-        make_scale = np.vectorize(lambda x, y: 0 if y < 0.99 else x)
+        targetImage = transf(Image.open(self.rootDirGt + targetName).convert('L'))
+        #edge = transf(Image.open(self.rootDirGtEdges + targetName).convert('L')).squeeze_(0).numpy()> 0.5
+        #dist = 2.0*bwdist(1.0 - (edge.astype(float)))
+        #make_scale = np.vectorize(lambda x, y: 0 if y < 0.99 else x)
 
-        scale = make_scale(dist,targetImage)
-        targetImage = torch.from_numpy(scale).float().unsqueeze_(0)
+        #scale = make_scale(dist,targetImage)
+        #targetImage = torch.from_numpy(scale).float().unsqueeze_(0)
         return inputImage, targetImage
 
 class SKLARGE(Dataset):
