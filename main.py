@@ -25,7 +25,7 @@ def grayTrans(img):
 
 image_dir = "images-coco"
 os.makedirs(image_dir, exist_ok=True)
-model_save_name = "FSDS-COCO.pth"
+model_save_name = "LMSDS-COCO.pth"
 
 print("Importing datasets...")
 
@@ -39,7 +39,7 @@ train = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=1)
 print("Initializing network...")
 
 modelPath = "model/vgg16.pth"
-nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
+nnet = torch.nn.DataParallel(initialize_lmsds(modelPath)).cuda()
 
 print("Defining hyperparameters...")
 
@@ -49,7 +49,7 @@ momentum = 0.9
 weightDecay = 0.0002
 receptive_fields = np.array([14,40,92,196])
 p = 1.2
-L = 0.05
+L = 0.5
 ###
 
 # Optimizer settings.
@@ -197,13 +197,12 @@ for epoch in range(epochs):
 
         sideOuts = nnet(image)
         quantise_SO = sideOuts[0:5]
-        #scale_SO = sideOuts[5:]
+        scale_SO = sideOuts[5:]
 
         loss_list = [balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)]
-        #loss_list_scale = [regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])]
+        loss_list_scale = [regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])]
 
-        loss = sum(loss_list) 
-        #+ L*sum(loss_list_scale)
+        loss = sum(loss_list) + L*sum(loss_list_scale)
 
         if np.isnan(float(loss.item())):
             raise ValueError('loss is nan while training')
