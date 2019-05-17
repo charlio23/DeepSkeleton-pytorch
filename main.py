@@ -26,6 +26,7 @@ def grayTrans(img):
 
 parser = argparse.ArgumentParser(description='Deep Skeleton training.')
 parser.add_argument('--LMSDS', default=False, help='Decide if you want to use FSDS or LMSDS.', action='store_true')
+parser.add_argument('--continue_train', default=False, help='Decide if you want to restart training.', action='store_true')
 args = parser.parse_args()
 
 image_dir = "images-coco"
@@ -50,9 +51,9 @@ print("Initializing network...")
 modelPath = "model/vgg16.pth"
 
 if args.LMSDS:
-    nnet = torch.nn.DataParallel(initialize_lmsds(modelPath)).cuda()
+    nnet = torch.nn.DataParallel(initialize_lmsds(modelPath, args.continue_train, model_save_name)).cuda()
 else:
-    nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
+    nnet = torch.nn.DataParallel(initialize_fsds(modelPath, args.continue_train, model_save_name)).cuda()
 
 print("Defining hyperparameters...")
 

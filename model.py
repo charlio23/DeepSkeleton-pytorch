@@ -24,12 +24,27 @@ def load_vgg16(net, path):
             j += 1
     return net
 
-def initialize_fsds(path):
+def load_vgg16(net, path):
+    dic = torch.load(path)
+    dicli = list(dic.keys())
+    new = {}
+    j = 0
+    for k in net.state_dict():
+        new[k] = dic[dicli[j]]
+        j += 1
+    net.load_state_dict(new)
+    return net
+
+def initialize_fsds(path,continue_train, path_HED=None):
     net = FSDS()
+    if continue_train:
+        return load_checkpoint(net,path)
     return load_vgg16(net,path)
 
-def initialize_lmsds(path):
+def initialize_lmsds(path,continue_train, path_HED=None):
     net = LMSDS()
+    if continue_train:
+        return load_checkpoint(net,path)
     return load_vgg16(net,path)
 
 class FSDS(torch.nn.Module):
