@@ -30,7 +30,8 @@ def load_checkpoint(net, path):
     new = {}
     j = 0
     for k in net.state_dict():
-        print(k)
+        if "Scale" in k:
+            continue
         new[k] = dic[dicli[j]]
         j += 1
     net.load_state_dict(new)
