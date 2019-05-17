@@ -38,7 +38,7 @@ def load_checkpoint(net, path):
 def initialize_fsds(path,continue_train, path_HED=None):
     net = FSDS()
     if continue_train:
-        return load_checkpoint(net,path)
+        return load_checkpoint(net,path_HED)
     return load_vgg16(net,path)
 
 def initialize_lmsds(path,continue_train, path_HED=None):
