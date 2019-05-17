@@ -24,7 +24,7 @@ def load_vgg16(net, path):
             j += 1
     return net
 
-def load_vgg16(net, path):
+def load_checkpoint(net, path):
     dic = torch.load(path)
     dicli = list(dic.keys())
     new = {}
