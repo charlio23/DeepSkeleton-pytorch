@@ -44,7 +44,7 @@ def initialize_fsds(path,continue_train, path_HED=None):
 def initialize_lmsds(path,continue_train, path_HED=None):
     net = LMSDS()
     if continue_train:
-        return load_checkpoint(net,path)
+        return load_checkpoint(net,path_HED)
     return load_vgg16(net,path)
 
 class FSDS(torch.nn.Module):
