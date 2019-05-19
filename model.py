@@ -546,13 +546,13 @@ class LMSDS(torch.nn.Module):
         upsampleScale5 = torch.nn.functional.conv_transpose2d(score_dsnScale5, self.weight_deconvScale5, stride=16)
 
         # Aligned cropping.
-        sideOutScale2 = upsample2[:, :, self.crop2_margin:self.crop2_margin+image_h,
+        sideOutScale2 = upsampleScale2[:, :, self.crop2_margin:self.crop2_margin+image_h,
                                 self.crop2_margin:self.crop2_margin+image_w]
-        sideOutScale3 = upsample3[:, :, self.crop3_margin:self.crop3_margin+image_h,
+        sideOutScale3 = upsampleScale3[:, :, self.crop3_margin:self.crop3_margin+image_h,
                                 self.crop3_margin:self.crop3_margin+image_w]
-        sideOutScale4 = upsample4[:, :, self.crop4_margin:self.crop4_margin+image_h,
+        sideOutScale4 = upsampleScale4[:, :, self.crop4_margin:self.crop4_margin+image_h,
                                 self.crop4_margin:self.crop4_margin+image_w]
-        sideOutScale5 = upsample5[:, :, self.crop5_margin:self.crop5_margin+image_h,
+        sideOutScale5 = upsampleScale5[:, :, self.crop5_margin:self.crop5_margin+image_h,
                                 self.crop5_margin:self.crop5_margin+image_w]
 
         #we do not ouptut softmax funtions as they are calculated with the cross entropy loss
