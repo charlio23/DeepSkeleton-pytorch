@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 class COCO(Dataset):
     def __init__(self, rootDir, offline=False):
         self.rootDirImg = rootDir + "images/"
-        self.rootDirGt = rootDir + "groundTruth/" + "person/" + "skeletons/" + "train/"
-        self.rootDirGtEdges = rootDir + "groundTruth/" + "person/" + "edges/" + "train/"
+        self.rootDirGt = rootDir + "groundTruth/" + "person/" + "skeletons/"
+        self.rootDirGtEdges = rootDir + "groundTruth/" + "person/" + "edges/"
         self.listData = sorted(os.listdir(self.rootDirGt))
     def __len__(self):
         return len(self.listData)
