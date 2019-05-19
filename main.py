@@ -151,12 +151,12 @@ def balanced_cross_entropy(input, target):
     weights = torch.ones(input.size(1))*neg_weight
     weights[0] = pos_weight
     #CE loss
-    loss = cross_entropy(input,target,weight=weights.cuda(),reduction='none')
+    loss = cross_entropy(input,target.squeeze_(1),weight=weights.cuda(),reduction='none')
 
     return torch.sum(loss)/batch
 
 def regressor_loss(input, targetScale, targetQuant):
-    weight = (targetQuant > 0.01).unsqueeze_(1).float()
+    weight = (targetQuant > 0.01).float()
     loss = torch.sum(weight*mse_loss(input, targetScale, reduction='none'))
     batch = targetScale.shape[0]
     return loss/batch
@@ -203,7 +203,7 @@ for epoch in range(epochs):
         image = Variable(image).cuda()
         
         quantization = np.vectorize(apply_quantization)
-        quantise = torch.from_numpy(quantization(scale.numpy())).squeeze_(1).cuda()
+        quantise = torch.from_numpy(quantization(scale.numpy())).cuda()
         quant_list = generate_quantise(quantise)
         
         scale = Variable(scale).cuda()
