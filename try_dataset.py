@@ -19,7 +19,7 @@ index = np.random.randint(len(listData))
 image = np.array(Image.open(rootDirImg + listImages[index]))
 itemGround = loadmat(rootDirGt + listData[index])
 edge, skeleton = itemGround['edge'], itemGround['symmetry']
-dist = bwdist(1 - edge)
+dist = 2*bwdist(1 - edge)
 appl = np.vectorize(lambda x, y: 0 if y < 0.5 else x)
 result = appl(dist,skeleton)
 

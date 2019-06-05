@@ -31,7 +31,7 @@ ite = iter(train)
 
 while True:
     image, scale = ite.next()
-    quantization = np.vectorize(lambda s: 0 if s < 0.001 else np.argmax(receptive_fields > p*s) + 1)
+    quantization = np.vectorize(apply_quantization)
     quantise = torch.from_numpy(quantization(scale.numpy())).squeeze_(1)
 
     fig = plt.figure(figsize=(16,4))

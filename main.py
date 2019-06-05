@@ -44,7 +44,7 @@ trainListPath = "SK-LARGE/aug_data/train_pair.lst"
 
 #trainDS = SKLARGE(rootDir, trainListPath)
 trainDS = COCO("../train2017/",True)
-train = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=4)
+train = DataLoader(trainDS, shuffle=True, batch_size=4, num_workers=4)
 
 print("Initializing network...")
 
