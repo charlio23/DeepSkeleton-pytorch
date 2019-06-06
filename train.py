@@ -32,7 +32,7 @@ def generate_quantise(quantise):
     result.append(quantise)
     return result
 
-def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 3):
+def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 3, L = 0.5):
     momentum = 0.9
     weightDecay = 2e-4
     receptive_fields = np.array([14,40,92,196])
@@ -44,37 +44,53 @@ def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 3):
             return len(receptive_fields)
         return np.argmax(receptive_fields > p*scale) + 1
 
-    # Optimizer settings.
-    net_parameters_id = defaultdict(list)
-    for name, param in nnet.named_parameters():
-        if name in ['module.conv1.0.weight', 'module.conv1.2.weight',
-                    'module.conv2.1.weight', 'module.conv2.3.weight',
-                    'module.conv3.1.weight', 'module.conv3.3.weight', 'module.conv3.5.weight',
-                    'module.conv4.1.weight', 'module.conv4.3.weight', 'module.conv4.5.weight']:
-            print('{:26} lr:    1 decay:1'.format(name)); net_parameters_id['conv1-4.weight'].append(param)
-        elif name in ['module.conv1.0.bias', 'module.conv1.2.bias',
-                    'module.conv2.1.bias', 'module.conv2.3.bias',
-                    'module.conv3.1.bias', 'module.conv3.3.bias', 'module.conv3.5.bias',
-                    'module.conv4.1.bias', 'module.conv4.3.bias', 'module.conv4.5.bias']:
-            print('{:26} lr:    2 decay:0'.format(name)); net_parameters_id['conv1-4.bias'].append(param)
-        elif name in ['module.conv5.1.weight', 'module.conv5.3.weight', 'module.conv5.5.weight']:
-            print('{:26} lr:  100 decay:1'.format(name)); net_parameters_id['conv5.weight'].append(param)
-        elif name in ['module.conv5.1.bias', 'module.conv5.3.bias', 'module.conv5.5.bias']:
-            print('{:26} lr:  200 decay:0'.format(name)); net_parameters_id['conv5.bias'].append(param)
-        elif name in ['module.sideOut1.weight', 'module.sideOut2.weight',
-                      'module.sideOut3.weight', 'module.sideOut4.weight', 'module.sideOut5.weight']:
-            print('{:26} lr: 0.01 decay:1'.format(name)); net_parameters_id['score_dsn_1-5.weight'].append(param)
-        elif name in ['module.sideOut1.bias', 'module.sideOut2.bias',
-                      'module.sideOut3.bias', 'module.sideOut4.bias', 'module.sideOut5.bias']:
-            print('{:26} lr: 0.02 decay:0'.format(name)); net_parameters_id['score_dsn_1-5.bias'].append(param)
-        elif name in ['module.fuseScale0.weight', 'module.fuseScale1.weight',
-                      'module.fuseScale2.weight', 'module.fuseScale3.weight']:
-            print('{:26} lr:0.001 decay:1'.format(name)); net_parameters_id['score_final.weight'].append(param)
-        elif name in ['module.fuseScale0.bias', 'module.fuseScale1.bias',
-                      'module.fuseScale2.bias', 'module.fuseScale3.bias']:
-            print('{:26} lr:0.002 decay:0'.format(name)); net_parameters_id['score_final.bias'].append(param)
+# Optimizer settings.
+net_parameters_id = defaultdict(list)
+for name, param in nnet.named_parameters():
+    if name in ['module.conv1.0.weight', 'module.conv1.2.weight',
+                'module.conv2.1.weight', 'module.conv2.3.weight',
+                'module.conv3.1.weight', 'module.conv3.3.weight',
+                'module.conv3.5.weight', 'module.conv4.1.weight',
+                'module.conv4.3.weight', 'module.conv4.5.weight']:
+        print('{:26} lr:    1 decay:1'.format(name)); net_parameters_id['conv1-4.weight'].append(param)
+    elif name in ['module.conv1.0.bias', 'module.conv1.2.bias',
+                  'module.conv2.1.bias', 'module.conv2.3.bias',
+                  'module.conv3.1.bias', 'module.conv3.3.bias',
+                  'module.conv3.5.bias', 'module.conv4.1.bias',
+                  'module.conv4.3.bias', 'module.conv4.5.bias']:
+        print('{:26} lr:    2 decay:0'.format(name)); net_parameters_id['conv1-4.bias'].append(param)
+    elif name in ['module.conv5.1.weight', 'module.conv5.3.weight',
+                  'module.conv5.5.weight']:
+        print('{:26} lr:  100 decay:1'.format(name)); net_parameters_id['conv5.weight'].append(param)
+    elif name in ['module.conv5.1.bias', 'module.conv5.3.bias',
+                  'module.conv5.5.bias']:
+        print('{:26} lr:  200 decay:0'.format(name)); net_parameters_id['conv5.bias'].append(param)
+    elif name in ['module.sideOut1.weight', 'module.sideOut2.weight',
+                  'module.fuseScale2.weight', 'module.sideOut3.weight',
+                  'module.sideOut4.weight', 'module.sideOut5.weight',
+                  'module.sideOutLoc1.weight', 'module.sideOutLoc2.weight',
+                  'module.sideOutLoc3.weight','module.sideOutLoc4.weight',
+                  'module.sideOutLoc5.weight','module.sideOutScale1.weight',
+                  'module.sideOutScale2.weight','module.sideOutScale3.weight',
+                  'module.sideOutScale4.weight','module.sideOutScale5.weight']:
+        print('{:26} lr: 0.01 decay:1'.format(name)); net_parameters_id['score_dsn_1-5.weight'].append(param)
+    elif name in ['module.sideOut1.bias', 'module.sideOut2.bias',
+                  'module.sideOut3.bias', 'module.sideOut4.bias',
+                  'module.sideOut5.bias','module.sideOutLoc1.bias', 
+                  'module.sideOutLoc2.bias','module.sideOutLoc3.bias',
+                  'module.sideOutLoc4.bias','module.sideOutLoc5.bias',
+                  'module.sideOutScale1.bias','module.sideOutScale2.bias',
+                  'module.sideOutScale3.bias', 'module.sideOutScale4.bias',
+                  'module.sideOutScale5.bias']:
+        print('{:26} lr: 0.02 decay:0'.format(name)); net_parameters_id['score_dsn_1-5.bias'].append(param)
+    elif name in ['module.fuseScale0.weight', 'module.fuseScale1.weight',
+                  'module.fuseScale3.weight','module.fuseScale3.weight']:
+        print('{:26} lr:0.05 decay:1'.format(name)); net_parameters_id['score_final.weight'].append(param)
+    elif name in ['module.fuseScale0.bias', 'module.fuseScale1.bias',
+                  'module.fuseScale2.bias', 'module.fuseScale3.bias',
+                  'module.fuseScale4.bias']:
+        print('{:26} lr:0.002 decay:0'.format(name)); net_parameters_id['score_final.bias'].append(param)
 
-    # IMPORTANT: In the official implementation paper, they specify that the lr is 5 times the base learning rate, contrary to their caffe code version
 
     # Create optimizer.
     optimizer = torch.optim.SGD([
@@ -89,7 +105,7 @@ def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 3):
     ], lr=learningRate, momentum=momentum, weight_decay=weightDecay)
 
     # Learning rate scheduler.
-    lr_schd = lr_scheduler.StepLR(optimizer, step_size=1e5, gamma=0.1)
+    lr_schd = lr_scheduler.StepLR(optimizer, step_size=5e4, gamma=0.1)
 
     print("Training started")
 
