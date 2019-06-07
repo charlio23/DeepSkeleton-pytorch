@@ -152,7 +152,7 @@ def train(nnet, train_data, p=1.2, learningRate=1e-6, nEpochs = 3, L = 0.5):
             scale_SO = sideOuts[5:]
             loss_list = sum([balanced_cross_entropy(sideOut, quant) for sideOut, quant in zip(sideOuts,quant_list)])
             loss_list_scale = sum([regressor_loss(sideOut, scale, quant) for sideOut, scale, quant in zip(scale_SO,scale_list,quant_list[0:4])])
-            loss = loss_list + L*sum(loss_list_scale)
+            loss = loss_list + L*loss_list_scale
             if np.isnan(float(loss.item())):
                 raise ValueError('loss is nan while training')
             lossAvg = loss/train_size
