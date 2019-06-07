@@ -1,21 +1,20 @@
-from dataset import SKLARGE, SKLARGE_RAW
-from model import initialize_fsds
+from dataset import SKLARGE
+from model import initialize_lmsds
 from torch.utils.data import DataLoader
 import torch
 from tqdm import tqdm
 from train import train, evaluate
 import numpy as np
 
+model_save_name = "LMSDS_VAL_"
+
 print("Importing datasets...")
 
-rootDir = "SK-LARGE/"
-trainListPath = "train_pair_val.lst"
+rootDir = "../SK-LARGE-VAL/"
+trainListPath = "../SK-LARGE-VAL/aug_data/train_pair.lst"
 
 trainDS = SKLARGE(rootDir, trainListPath)
 train_data = DataLoader(trainDS, shuffle=True, batch_size=1, num_workers=4)
-
-evalDS = SKLARGE_RAW("SK-LARGE/images/val", "SK-LARGE/groundTruth/val")
-eval_data = DataLoader(evalDS, shuffle=False, batch_size=1, num_workers=4)
 
 print("Initializing network...")
 
@@ -25,28 +24,15 @@ print("Defining hyperparameters...")
 
 ### HYPER-PARAMETERS
 learningRates = [1e-7]
-ps = np.linspace(1.2,1.8,10)
+p = 1.2
+L = np.logspace(-4, 3, 15)
 ###
-first = True
-bestp = 0
-bestlr = 0
-minloss = 0
-results = []
 for learningRate in learningRates:
-    for p in ps:
+    for lamb in L:
         try:
-            nnet = torch.nn.DataParallel(initialize_fsds(modelPath)).cuda()
-            nnet = train(nnet, train_data, p, learningRate, 3)
-            loss = evaluate(nnet, eval_data)
-            results.append("lr: " + str(learningRate) + ", p: " + str(p) + "loss: " + str(loss))
-            if first or loss < minloss:
-                first = False
-                bestp = p
-                bestlr = learningRate
-                minloss = loss
-        except:
-            pass
-
-print(results)
-print("Best learning rate is: ",bestlr)
-print("Best p is: ", bestp)
+            nnet = torch.nn.DataParallel(initialize_lmsds(modelPath, False)).cuda()
+            nnet = train(nnet, train_data, p, learningRate, 6, lamb)
+            name = str(lamb).replace('.','_')
+            torch.save(nnet.state_dict(), model_save_name + name + '.pth')
+        except ValueError:
+            raise ValueError
