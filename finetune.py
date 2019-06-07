@@ -3,7 +3,7 @@ from model import initialize_lmsds
 from torch.utils.data import DataLoader
 import torch
 from tqdm import tqdm
-from train import train, evaluate
+from train import train
 import numpy as np
 
 model_save_name = "LMSDS_VAL_"
