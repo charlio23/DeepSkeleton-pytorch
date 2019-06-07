@@ -21,7 +21,7 @@ def balanced_cross_entropy(input, target):
     weights = (torch.tensor(weights).float()/weight_total).cuda()
     """
     # weights caffe code implementation
-    batch, height, width = target.shape
+    batch, _, height, width = target.shape
     total_weight = height*width
     pos_weight = torch.sum(target > 0.1).item()/total_weight
     neg_weight = 1 - pos_weight
